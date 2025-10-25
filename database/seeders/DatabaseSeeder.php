@@ -14,15 +14,14 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // jalankan seeder custom
-        $this->call([
-            UserSeeder::class,
-            //ServiceSeeder::class,
-            CounterSeeder::class,
-            StaffSeeder::class,
-            CounterServiceSeeder::class,
-            RatingSeeder::class,
-            
-        StaffAssignmentSeeder::class,  // jadwal harian s/d 31 Des tahun depan
-        ]);
+       $this->call([
+    UserSeeder::class,        // bebas duluan
+    CounterSeeder::class,     // base
+   // ServiceSeeder::class,     // base (WAJIB nyala)
+    StaffSeeder::class,       // base
+    CounterServiceSeeder::class, // pivot counters<->services
+    StaffAssignmentSeeder::class, // pakai counters & staff
+    RatingSeeder::class,      // pakai counters, services, staff
+]);
     }
 }
