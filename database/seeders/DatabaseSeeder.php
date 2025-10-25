@@ -20,6 +20,9 @@ class DatabaseSeeder extends Seeder
             CounterSeeder::class,
             StaffSeeder::class,
             CounterServiceSeeder::class,
+            RatingSeeder::class,
+            
+        StaffAssignmentSeeder::class,  // jadwal harian s/d 31 Des tahun depan
         ]);
     }
 }

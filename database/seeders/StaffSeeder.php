@@ -4,35 +4,87 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Carbon;
+use Carbon\Carbon;
 
 class StaffSeeder extends Seeder
 {
     public function run(): void
     {
-        DB::table('staff_assignments')->truncate();
-        DB::table('staff')->truncate();
+        $now = Carbon::now();
 
-        $start = Carbon::now('Asia/Jakarta')->startOfDay();
-        $counters = DB::table('counters')->orderBy('id')->get();
+        $names = [
+            "Ali Amran",
+            "Deki Permana, S.T",
+            "Denanda Fattah, S.T",
+            "Desian Muliyanti, S.IP",
+            "Dian Anggeraini",
+            "Dian Angriani, SE",
+            "Diding Kurniati. K",
+            "Febri Yanti",
+            "Febry Rahmayanti Harahap, S.Pd",
+            "Fikri Hilmawan, SE",
+            "Golkar Rina,SE",
+            "Gunawan",
+            "Gustaf Ardiansyah, S.Tr.Sos",
+            "Hasnawati, SE",
+            "Helmi, SE",
+            "Imron Suryadi",
+            "Indah Lestari, A.Md",
+            "Iskandar",
+            "Jainal",
+            "Meilani, SE",
+            "Mhd. Doni Hadinata, S.Sos",
+            "Muhamad Zaini, S.Sos",
+            "Muhammad Tazi Irwan",
+            "Mu'ijul Ikhwan",
+            "Muliadi, S.T",
+            "Nurhayati",
+            "Rina Juliantika",
+            "Romi Ali Jasmanto",
+            "Surya Dharma",
+            "Susilawati, S.E",
+            "Syuzariansyah",
+            "Tamran Ramadan",
+            "Tarmizi",
+            "Venny Carlina",
+            "Winarto S",
+            "Yopi Zulfikar, S.IP",
+            "Yopie Arnoz",
+            "Zakaria",
+            "Zulkarnedi Hendri",
+            "Rudiyanto",
+        ];
 
-        foreach ($counters as $c) {
-            $sid = DB::table('staff')->insertGetId([
-                'name' => 'Petugas '.$c->id,
-                'photo_url' => null,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+        DB::transaction(function () use ($now, $names) {
+            // 1) Bersihin tabel dependent dulu (RESTRICT)
+            if (DB::getSchemaBuilder()->hasTable('staff_assignments')) {
+                DB::table('staff_assignments')->delete();
+            }
 
-            DB::table('staff_assignments')->insert([
-                'counter_id' => $c->id,
-                'staff_id'   => $sid,
-                'starts_at'  => $start,
-                'ends_at'    => null,
-                'note'       => 'primary',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-        }
+            // 2) Hapus staff (ratings akan auto-null karena nullOnDelete)
+            DB::table('staff')->delete();
+
+            // 3) Reset auto increment (hindari TRUNCATE)
+            // Lewatin kalau user DB-mu ga punya ALTER privilege
+            try {
+                DB::statement('ALTER TABLE staff AUTO_INCREMENT = 1');
+            } catch (\Throwable $e) {
+                // diam aja; bukan critical
+            }
+
+            // 4) Insert data baru
+            $payload = [];
+            foreach ($names as $i => $name) {
+                $payload[] = [
+                    'name'       => $name,
+                    'photo_url'  => 'https://picsum.photos/200?random=' . ($i + 1),
+                    'photo_path' => null,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            }
+
+            DB::table('staff')->insert($payload);
+        });
     }
 }

@@ -15,6 +15,9 @@
   $selectedService = collect($services ?? [])->firstWhere('id', (int)($serviceId ?? 0));
   $selectedCounter = collect($counters ?? [])->firstWhere('id', (int)($counterId ?? 0));
   $selectedStaff   = collect($staffOptions ?? [])->firstWhere('id', (int)($staffId ?? 0));
+   $partnerLogo      = $partnerLogo      ?? asset('images/logokemendagri.png');
+  $partnerLogoLink  = $partnerLogoLink  ?? 'images/logokemendagri.png';
+  $partnerLogoTitle = $partnerLogoTitle ?? 'Kementerian Dalam Negeri';
 @endphp
 
 {{-- WRAPPER FULL VIEWPORT: BG selalu 16:9 full screen --}}
@@ -31,23 +34,51 @@
   <div class="relative z-10 min-h-dvh w-full flex flex-col text-neutral-900">
 
     {{-- NAVBAR --}}
-    <nav class="sticky top-0 z-20 w-full border-b border-white/30 bg-white/20 backdrop-blur">
-      <div class="w-full h-16 px-6 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <img src="/images/pemkot-batam.png" alt="Logo Instansi" class="h-12 aspect-[3/4] object-contain p-1"/>
-          <div class="leading-tight">
-            <div class="font-semibold text-white drop-shadow">DUKCAPIL PRIMA</div>
-            <div class="text-xs text-white/80">INDONESIA MAJU</div>
-          </div>
-        </div>
-        <div class="flex items-center gap-2">
-          <a href="{{ route('kiosk') }}" class="rounded-lg px-3 py-2 text-sm text-white/90 hover:text-white hover:bg-white/10">Versi Lama</a>
-          <button type="button"
-            onclick="(document.documentElement.requestFullscreen?.()||document.documentElement.webkitRequestFullscreen?.()||document.documentElement.msRequestFullscreen?.())"
-            class="rounded-lg px-3 py-2 text-sm text-white/90 hover:text-white hover:bg-white/10">Layar Penuh</button>
+ <nav class="sticky top-0 z-20 w-full border-b border-white/30 bg-white/20 backdrop-blur">
+  <div class="w-full h-16 px-6 flex items-center justify-between">
+    <!-- KIRI: logo utama -->
+    <div class="flex items-center gap-3">
+      <img src="/images/pemkot-batam.png" alt="Logo Instansi" class="h-12 aspect-[3/4] object-contain p-1"/>
+      <div class="leading-tight">
+        <div class="font-semibold text-white drop-shadow">DUKCAPIL PRIMA</div>
+        <div class="text-xs text-white/80">INDONESIA MAJU</div>
+      </div>
+    </div>
+     <div class="flex items-center gap-3">
+      <div class="flex items-center gap-3">
+        
+        <div class="leading-tight">
+          <div class="font-semibold text-white drop-shadow">KEMENTERIAN DALAM NEGERI</div>
+          <div class="text-xs text-white/80">REPUBLIK INDONESIA</div>
         </div>
       </div>
-    </nav>
+
+
+    <!-- KANAN: slot logo mitra + actions -->
+    <div class="flex items-center gap-3">
+      @if ($partnerLogo)
+        @if ($partnerLogoLink)
+          <a href="{{ $partnerLogoLink }}" target="_blank" rel="noopener"
+             class="block h-10 w-auto rounded-lg bg-white/20 hover:bg-white/30 border border-white/30 p-1">
+            <img src="{{ $partnerLogo }}" alt="{{ $partnerLogoTitle }}" class="h-full w-auto object-contain"/>
+          </a>
+        @else
+          <div class="h-10 w-auto rounded-lg bg-white/20 border border-white/30 p-1">
+            <img src="{{ $partnerLogo }}" alt="{{ $partnerLogoTitle }}" class="h-full w-auto object-contain"/>
+          </div>
+        @endif
+      @endif
+
+     
+      <button type="button"
+        onclick="(document.documentElement.requestFullscreen?.()||document.documentElement.webkitRequestFullscreen?.()||document.documentElement.msRequestFullscreen?.())"
+        class="rounded-lg px-3 py-2 text-sm text-white/90 hover:text-white hover:bg-white/10">
+        Layar Penuh
+      </button>
+    </div>
+  </div>
+</nav>
+
 
     {{-- BODY --}}
     <main class="relative z-20 flex-1 w-full">
