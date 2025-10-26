@@ -11,29 +11,30 @@ class RatingSeeder extends Seeder
     public function run(): void
     {
         $now = now();
-        $comments = [
-            'Pelayanan oke.',
-            'Cepat dan ramah.',
-            'Proses agak lama.',
-            'Petugas helpful.',
-            'Perlu antre lebih rapi.',
-        ];
+        DB::table('ratings')->delete();
 
+        // Ambil ID valid dari DB (hindari rand(1,N))
+        $serviceIds = DB::table('services')->pluck('id')->all();
+        $counterIds = DB::table('counters')->pluck('id')->all();
+        $staffIds   = DB::table('staff')->pluck('id')->all();
+
+        if (!$serviceIds || !$counterIds || !$staffIds) return;
+
+        $comments = [ null,'Pelayanan oke.','Cepat dan ramah.','Proses agak lama.','Petugas helpful.','Perlu antre lebih rapi.' ];
         $rows = [];
-        // ganti jumlah sesuai kebutuhan
+
         for ($i = 0; $i < 200; $i++) {
             $rows[] = [
-                'service_id' => rand(1, 11),
-                'counter_id' => rand(1, 25),
-                'staff_id'   => rand(1, 20),
+                'service_id' => $serviceIds[array_rand($serviceIds)],
+                'counter_id' => $counterIds[array_rand($counterIds)],
+                'staff_id'   => $staffIds[array_rand($staffIds)],
                 'score'      => rand(1, 5),
-                'comment'    => $comments[array_rand($comments)], // atau Str::random(20)
-                'created_at' => $now,
+                'comment'    => $comments[array_rand($comments)],
+                'created_at' => $now->copy()->subDays(rand(0, 90)),
                 'updated_at' => $now,
             ];
         }
 
-        // insert in chunks biar aman
         foreach (array_chunk($rows, 500) as $chunk) {
             DB::table('ratings')->insert($chunk);
         }

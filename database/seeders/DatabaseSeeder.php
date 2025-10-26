@@ -11,13 +11,12 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-            UserSeeder::class,          // bebas duluan
-            CounterSeeder::class,       // base
-          //  ServiceSeeder::class,       // base (WAJIB)
-            StaffSeeder::class,         // base
-            CounterServiceSeeder::class,// pivot counters <-> services
-            StaffAssignmentSeeder::class,// pakai counters & staff
-            RatingSeeder::class,        // pakai counters, services, staff
+            UserSeeder::class,
+            CounterSeeder::class,
+            StaffSeeder::class,
+            CounterServiceSeeder::class,
+            StaffAssignmentSeeder::class,
+            RatingSeeder::class,
         ]);
     }
 }
