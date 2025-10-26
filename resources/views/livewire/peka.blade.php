@@ -78,6 +78,8 @@
             </button>
           </div>
         </div>
+
+        {{-- MOBILE ROW REMOVED: Kemendagri text is hidden on mobile per request --}}
       </nav>
     </div>
 
@@ -95,18 +97,36 @@
         {{-- ====== MODE: LANDING ====== --}}
         @if ($mode === 'landing')
           <section class="rounded-2xl border border-white/30 bg-white/85 backdrop-blur shadow p-6 sm:p-8 grid lg:grid-cols-2 gap-6 lg:gap-8">
-            <div class="space-y-4 lg:col-span-2 text-center">
+            <div class="space-y-3">
               <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">PEKA (Penilaian Emoji Kinerja Aparatur)</h1>
-              <p class="text-neutral-700 max-w-2xl mx-auto">Bantu kami tingkatkan layanan. Proses cepat: pilih layanan, loket, petugas, kasih nilai, komentar opsional.</p>
-            
-              {{-- HANYA SATU TOMBOL, DI TENGAH --}}
-              <div class="flex justify-center pt-1">
+              <p class="text-neutral-700">Bantu kami tingkatkan layanan. Proses cepat: pilih layanan, loket, petugas, kasih nilai, komentar opsional.</p>
+              <ul class="text-sm text-neutral-700 list-disc pl-5 space-y-1">
+                <li>Tanpa login</li>
+                <li>Kurang dari 30 detik</li>
+                <li>Data langsung kami proses</li>
+              </ul>
+              <div class="flex flex-wrap items-center gap-3 pt-2">
                 <button type="button"
                   wire:click="start"
-                  class="px-8 py-3 rounded-xl text-white font-semibold bg-gradient-to-r from-[#F59E0B] to-[#1E40AF] hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-white/60">
+                  class="px-6 py-3 rounded-xl text-white font-semibold bg-gradient-to-r from-[#F59E0B] to-[#1E40AF] hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-white/60">
                   Mulai Penilaian
                 </button>
+                <button type="button"
+                  wire:click="startAtStaff"
+                  class="px-4 py-3 rounded-xl border border-white/40 bg-white/80 hover:bg-white">
+                  Saya sudah di loket
+                </button>
               </div>
+            </div>
+            <div class="rounded-2xl border border-white/30 bg-white/70 p-5">
+              <h2 class="font-semibold mb-3">Cara kerja</h2>
+              <ol class="text-sm space-y-2">
+                <li>1. Pilih layanan yang dipakai</li>
+                <li>2. Pilih loket</li>
+                <li>3. Pilih petugas yang melayani</li>
+                <li>4. Pilih emoji kepuasan</li>
+                <li>5. Tulis komentar (opsional), lalu kirim</li>
+              </ol>
             </div>
           </section>
         @endif
