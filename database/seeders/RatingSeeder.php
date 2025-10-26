@@ -4,41 +4,38 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
+use Illuminate\Support\Str;
 
 class RatingSeeder extends Seeder
 {
     public function run(): void
     {
-        DB::table('ratings')->delete();
-
-        $counters = DB::table('counters')->pluck('id');
-        $services = DB::table('services')->pluck('id');
-        $staff    = DB::table('staff')->pluck('id');
+        $now = now();
+        $comments = [
+            'Pelayanan oke.',
+            'Cepat dan ramah.',
+            'Proses agak lama.',
+            'Petugas helpful.',
+            'Perlu antre lebih rapi.',
+        ];
 
         $rows = [];
-        $now = Carbon::now();
-
-        foreach ($staff as $sid) {
-            // ambil counter random untuk staff ini
-            $counter = $counters->random();
-            // generate minimal 10 rating (bisa lebih kalau mau variasi)
-            $votes = rand(10, 20); 
-
-            for ($i = 0; $i < $votes; $i++) {
-                $rows[] = [
-                    'counter_id' => $counter,
-                    'service_id' => $services->random(),
-                    'staff_id'   => $sid,
-                    'score'      => rand(1, 5),
-                    'comment'    => fake()->optional()->sentence(),
-                    'flags'      => null,
-                    'created_at' => $now->copy()->subDays(rand(0, 90)),
-                    'updated_at' => $now,
-                ];
-            }
+        // ganti jumlah sesuai kebutuhan
+        for ($i = 0; $i < 200; $i++) {
+            $rows[] = [
+                'service_id' => rand(1, 11),
+                'counter_id' => rand(1, 25),
+                'staff_id'   => rand(1, 20),
+                'score'      => rand(1, 5),
+                'comment'    => $comments[array_rand($comments)], // atau Str::random(20)
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
         }
 
-        DB::table('ratings')->insert($rows);
+        // insert in chunks biar aman
+        foreach (array_chunk($rows, 500) as $chunk) {
+            DB::table('ratings')->insert($chunk);
+        }
     }
 }
