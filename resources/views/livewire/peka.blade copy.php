@@ -15,107 +15,115 @@
   $selectedService = collect($services ?? [])->firstWhere('id', (int)($serviceId ?? 0));
   $selectedCounter = collect($counters ?? [])->firstWhere('id', (int)($counterId ?? 0));
   $selectedStaff   = collect($staffOptions ?? [])->firstWhere('id', (int)($staffId ?? 0));
-
-  $partnerLogo      = $partnerLogo      ?? asset('images/logokemendagri.png');
+   $partnerLogo      = $partnerLogo      ?? asset('images/logokemendagri.png');
   $partnerLogoLink  = $partnerLogoLink  ?? 'images/logokemendagri.png';
   $partnerLogoTitle = $partnerLogoTitle ?? 'Kementerian Dalam Negeri';
 @endphp
 
 {{-- WRAPPER FULL VIEWPORT: BG selalu 16:9 full screen --}}
-<div class="fixed inset-0 w-screen h-screen overflow-hidden text-neutral-900">
+<div class="fixed inset-0 w-screen h-screen overflow-hidden">
   {{-- FOTO --}}
   <img
     src="{{ asset('images/barelang.jpg') }}"
-    alt="Latar kota"
+    alt=""
     class="absolute inset-0 w-full h-full object-cover object-[50%_30%] pointer-events-none select-none" />
-
-  {{-- GRADIENT BRAND di atas foto (tetap, tapi ditambah vignette subtle) --}}
-  <div class="absolute inset-0 [background:linear-gradient(to_top,_#1E40AF_0%,_#F97316_50%,_#F59E0B_100%)] opacity-80 pointer-events-none"></div>
-  <div class="absolute inset-0 bg-[radial-gradient(60%_50%_at_50%_30%,_transparent_0,_transparent_55%,_rgba(0,0,0,0.25)_100%)] pointer-events-none mix-blend-multiply"></div>
+  {{-- GRADIENT BRAND di atas foto --}}
+  <div class="absolute inset-0 bg-[linear-gradient(to_top,_#1E40AF_0%,_#F97316_50%,_#F59E0B_100%)] opacity-80 pointer-events-none"></div>
 
   {{-- LAYER KONTEN --}}
-  <div class="relative z-10 min-h-dvh w-full flex flex-col">
+  <div class="relative z-10 min-h-dvh w-full flex flex-col text-neutral-900">
 
     {{-- NAVBAR --}}
-    <nav class="sticky top-0 z-20 w-full border-b border-white/20 bg-white/15 backdrop-blur-xl supports-[backdrop-filter]:bg-white/10">
-      <div class="mx-auto w-full max-w-7xl h-16 px-4 sm:px-6 flex items-center justify-between">
-        <!-- LEFT: brand -->
-        <a href="#" class="flex items-center gap-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 rounded-xl">
-          <img src="/images/pemkot-batam.png" alt="Logo Instansi" class="h-10 aspect-[3/4] object-contain p-1" loading="lazy" decoding="async"/>
-          <div class="leading-tight select-none">
-            <div class="font-semibold text-white drop-shadow">DUKCAPIL PRIMA</div>
-            <div class="text-xs text-white/80">INDONESIA MAJU</div>
-          </div>
-        </a>
-
-        <!-- CENTER: partner text (auto-hide on small) -->
-       <div class="flex items-center gap-3">
-  @if ($partnerLogo)
-    <div class="flex items-center gap-2">
-      <a href="{{ $partnerLogoLink }}" target="_blank" rel="noopener"
-         class="block h-10 w-auto rounded-lg bg-white/20 hover:bg-white/30 border border-white/30 p-1">
-        <img src="{{ $partnerLogo }}" alt="{{ $partnerLogoTitle }}" class="h-full w-auto object-contain"/>
-      </a>
-      <div class="leading-tight text-white">
-        <div class="font-semibold drop-shadow">KEMENTERIAN DALAM NEGERI</div>
-        <div class="text-xs text-white/80">REPUBLIK INDONESIA</div>
+ <nav class="sticky top-0 z-20 w-full border-b border-white/30 bg-white/20 backdrop-blur">
+  <div class="w-full h-16 px-6 flex items-center justify-between">
+    <!-- KIRI: logo utama -->
+    <div class="flex items-center gap-3">
+      <img src="/images/pemkot-batam.png" alt="Logo Instansi" class="h-12 aspect-[3/4] object-contain p-1"/>
+      <div class="leading-tight">
+        <div class="font-semibold text-white drop-shadow">DUKCAPIL PRIMA</div>
+        <div class="text-xs text-white/80">INDONESIA MAJU</div>
       </div>
     </div>
-  @endif
-
-          <button type="button"
-            onclick="(document.documentElement.requestFullscreen?.()||document.documentElement.webkitRequestFullscreen?.()||document.documentElement.msRequestFullscreen?.())"
-            class="rounded-lg px-3 py-2 text-sm text-white/90 hover:text-white hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60">
-            Layar Penuh
-          </button>
+     <div class="flex items-center gap-3">
+      <div class="flex items-center gap-3">
+        
+        <div class="leading-tight">
+          <div class="font-semibold text-white drop-shadow">KEMENTERIAN DALAM NEGERI</div>
+          <div class="text-xs text-white/80">REPUBLIK INDONESIA</div>
         </div>
       </div>
-    </nav>
+
+
+    <!-- KANAN: slot logo mitra + actions -->
+    <div class="flex items-center gap-3">
+      @if ($partnerLogo)
+        @if ($partnerLogoLink)
+          <a href="{{ $partnerLogoLink }}" target="_blank" rel="noopener"
+             class="block h-10 w-auto rounded-lg bg-white/20 hover:bg-white/30 border border-white/30 p-1">
+            <img src="{{ $partnerLogo }}" alt="{{ $partnerLogoTitle }}" class="h-full w-auto object-contain"/>
+          </a>
+        @else
+          <div class="h-10 w-auto rounded-lg bg-white/20 border border-white/30 p-1">
+            <img src="{{ $partnerLogo }}" alt="{{ $partnerLogoTitle }}" class="h-full w-auto object-contain"/>
+          </div>
+        @endif
+      @endif
+
+     
+      <button type="button"
+        onclick="(document.documentElement.requestFullscreen?.()||document.documentElement.webkitRequestFullscreen?.()||document.documentElement.msRequestFullscreen?.())"
+        class="rounded-lg px-3 py-2 text-sm text-white/90 hover:text-white hover:bg-white/10">
+        Layar Penuh
+      </button>
+    </div>
+  </div>
+</nav>
+
 
     {{-- BODY --}}
     <main class="relative z-20 flex-1 w-full">
-      <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 py-6">
+      <div class="h-full w-full px-6 py-6">
 
-        {{-- ALERT --}}
+        {{-- ALERT: tampil di dua mode --}}
         @if (session('ok'))
-          <div role="status" aria-live="polite" class="mb-4 rounded-2xl border border-white/30 bg-white/85 backdrop-blur px-4 py-3 text-sm text-green-900 shadow">
+          <div class="mb-4 rounded-2xl border border-white/30 bg-white/80 backdrop-blur px-4 py-3 text-sm text-green-900 shadow">
             {{ session('ok') }}
           </div>
         @endif
 
         {{-- ====== MODE: LANDING ====== --}}
         @if ($mode === 'landing')
-          <section class="rounded-2xl border border-white/30 bg-white/90 backdrop-blur-xl shadow p-0 overflow-hidden">
-            <div class="px-6 sm:px-10 py-14 flex items-center justify-center">
-              <div class="w-full max-w-3xl text-center">
-                <h1 class="text-3xl sm:text-4xl font-extrabold leading-tight tracking-tight">
-                  Penilaian Emoji Kinerja Aparatur  <br>
-                 (PEKA)
-                </h1>
-                <p class="mt-3 text-neutral-700">
-                  Sampaikan kepuasan layanan dalam hitungan detik. Simple. To the point.
-                </p>
-
-                <!-- Static emoji showcase, purely visual -->
-                <div class="mt-8 flex items-center justify-center gap-3 select-none" aria-hidden="true">
-                  <div class="h-16 w-16 rounded-2xl border border-white/40 bg-white/80 grid place-items-center text-3xl">😡</div>
-                  <div class="h-16 w-16 rounded-2xl border border-white/40 bg-white/80 grid place-items-center text-3xl">☹️</div>
-                  <div class="h-16 w-16 rounded-2xl border border-white/40 bg-white/80 grid place-items-center text-3xl">😐</div>
-                  <div class="h-16 w-16 rounded-2xl border border-white/40 bg-white/80 grid place-items-center text-3xl">🙂</div>
-                  <div class="h-16 w-16 rounded-2xl border border-white/40 bg-white/80 grid place-items-center text-3xl">😍</div>
-                </div>
-
-                <!-- Single CTA only -->
-                <div class="mt-10">
-                  <button type="button"
-                          wire:click="start"
-                          class="px-8 py-4 rounded-2xl text-white font-semibold bg-gradient-to-r from-[#F59E0B] to-[#1E40AF] hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 motion-safe:transition-transform motion-safe:hover:scale-[1.02]">
-                    Mulai Penilaian
-                  </button>
-                </div>
-
-                <p class="mt-4 text-xs text-neutral-600">Tidak perlu login. 5 langkah singkat.</p>
+          <section class="rounded-2xl border border-white/30 bg-white/85 backdrop-blur shadow p-8 grid lg:grid-cols-2 gap-8">
+            <div class="space-y-3">
+              <h1 class="text-3xl font-bold tracking-tight">PEKA (Penilaian Emoji Kinerja Aparatur)</h1>
+              <p class="text-neutral-700">Bantu kami tingkatkan layanan. Proses cepat: pilih layanan, loket, petugas, kasih nilai, komentar opsional.</p>
+              <ul class="text-sm text-neutral-700 list-disc pl-5 space-y-1">
+                <li>Tanpa login</li>
+                <li>Kurang dari 30 detik</li>
+                <li>Data langsung kami proses</li>
+              </ul>
+              <div class="flex items-center gap-3 pt-2">
+                <button type="button"
+                  wire:click="start"
+                  class="px-6 py-3 rounded-xl text-white font-semibold bg-gradient-to-r from-[#F59E0B] to-[#1E40AF] hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-white/60">
+                  Mulai Penilaian
+                </button>
+                <button type="button"
+                  wire:click="startAtStaff"
+                  class="px-4 py-3 rounded-xl border border-white/40 bg-white/80 hover:bg-white">
+                  Saya sudah di loket
+                </button>
               </div>
+            </div>
+            <div class="rounded-2xl border border-white/30 bg-white/70 p-5">
+              <h2 class="font-semibold mb-3">Cara kerja</h2>
+              <ol class="text-sm space-y-2">
+                <li>1. Pilih layanan yang dipakai</li>
+                <li>2. Pilih loket</li>
+                <li>3. Pilih petugas yang melayani</li>
+                <li>4. Pilih emoji kepuasan</li>
+                <li>5. Tulis komentar (opsional), lalu kirim</li>
+              </ol>
             </div>
           </section>
         @endif
@@ -126,40 +134,35 @@
 
           {{-- KIRI: FORM / STEP --}}
           <section class="col-span-12 lg:col-span-7 xl:col-span-8 flex flex-col">
-            {{-- Header + stepper --}}
-            <div class="rounded-2xl border border-white/30 bg-white/85 backdrop-blur-xl shadow p-5 mb-4">
-              <div class="flex items-center justify-between gap-4">
+            {{-- Header + dots --}}
+            <div class="rounded-2xl border border-white/30 bg-white/85 backdrop-blur shadow p-5 mb-4">
+              <div class="flex items-center justify-between">
                 <div>
                   <h1 class="text-2xl font-bold tracking-tight">PEKA (Penilaian Emoji Kinerja Aparatur)</h1>
-                  <p class="text-sm text-neutral-600 mt-1">5 langkah. Nggak ribet.</p>
+                  <p class="text-sm text-neutral-600 mt-1">5 langkah ringkas. Klik dan jalan.</p>
                 </div>
-                <ol class="flex items-center gap-2" role="list">
+                <div class="flex items-center gap-2">
                   @for ($i=1; $i<=5; $i++)
-                    @php $active = $stage >= $i; @endphp
-                    <li aria-current="{{ $active && $stage === $i ? 'step' : 'false' }}">
-                      <span class="block h-2.5 w-2.5 rounded-full {{ $active ? 'bg-[linear-gradient(90deg,#F59E0B,#1E40AF)] shadow' : 'bg-white/60' }}"></span>
-                    </li>
+                    <span class="h-2.5 w-2.5 rounded-full {{ $stage >= $i ? 'bg-[linear-gradient(90deg,#F59E0B,#1E40AF)] shadow' : 'bg-white/60' }}"></span>
                   @endfor
-                </ol>
+                </div>
               </div>
             </div>
 
             {{-- STAGE 1: PILIH LAYANAN --}}
             @if ($stage === 1)
-              <div class="rounded-2xl border border-white/30 bg-white/85 backdrop-blur-xl shadow p-5">
+              <div class="rounded-2xl border border-white/30 bg-white/85 backdrop-blur shadow p-5">
                 <div class="mb-3 flex items-center justify-between">
                   <h2 class="text-lg font-semibold">Pilih Layanan</h2>
-                  <button type="button" wire:click="backToLanding" class="text-sm underline text-black/90 hover:text-black focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 rounded">
-                    Kembali ke Landing
-                  </button>
+                  <button type="button" wire:click="backToLanding" class="text-sm underline text-black hover:text-neutral-700">Kembali ke Landing</button>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                   @foreach (($services ?? []) as $svc)
                     <button type="button"
                       wire:click="selectService({{ (int)$svc['id'] }})"
-                      class="group relative w-full p-3 rounded-xl text-left transition border focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60
+                      class="group relative w-full p-3 rounded-xl text-left transition border
                              {{ $serviceId==$svc['id']
-                                ? 'border-transparent text-white bg-gradient-to-r from-[#F59E0B] to-[#1E40AF] shadow motion-safe:hover:scale-[1.01]'
+                                ? 'border-transparent text-white bg-gradient-to-r from-[#F59E0B] to-[#1E40AF] shadow'
                                 : 'border-white/40 bg-white/80 hover:bg-white' }}">
                       <span class="relative block font-medium whitespace-normal">{{ $svc['name'] }}</span>
                     </button>
@@ -170,21 +173,21 @@
 
             {{-- STAGE 2: PILIH LOKET --}}
             @if ($stage === 2)
-              <div class="rounded-2xl border border-white/30 bg-white/85 backdrop-blur-xl shadow p-5">
-                <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <div class="rounded-2xl border border-white/30 bg-white/85 backdrop-blur shadow p-5">
+                <div class="mb-3 flex items-center justify-between">
                   <h2 class="text-lg font-semibold">Pilih Loket</h2>
                   <div class="flex items-center gap-3">
-                    <button type="button" wire:click="backToStart" class="text-sm underline text-black/90 hover:text-black focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 rounded">Ulang dari Layanan</button>
-                    <button type="button" wire:click="backToLanding" class="text-sm underline text-black/90 hover:text-black focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 rounded">Kembali ke Landing</button>
+                    <button type="button" wire:click="backToStart" class="text-sm underline text-black hover:text-neutral-700">Ulang dari Layanan</button>
+                    <button type="button" wire:click="backToLanding" class="text-sm underline text-black hover:text-neutral-700">Kembali ke Landing</button>
                   </div>
                 </div>
                 <div class="grid sm:grid-cols-3 md:grid-cols-4 gap-3">
                   @foreach (collect($counters)->sortBy('id') as $c)
                     <button type="button"
                             wire:click="selectCounter({{ (int)$c['id'] }})"
-                            class="relative p-4 rounded-xl transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60
+                            class="relative p-4 rounded-xl transition
                                    {{ $counterId==$c['id']
-                                      ? 'text-white bg-gradient-to-r from-[#F59E0B] to-[#1E40AF] border-0 shadow motion-safe:hover:scale-[1.01]'
+                                      ? 'text-white bg-gradient-to-r from-[#F59E0B] to-[#1E40AF] border-0 shadow'
                                       : 'border border-white/40 bg-white/80 hover:bg-white text-neutral-900' }}">
                       <span class="relative font-medium truncate">{{ $c['name'] }}</span>
                     </button>
@@ -195,13 +198,13 @@
 
             {{-- STAGE 3: PILIH PETUGAS --}}
             @if ($stage === 3)
-              <div class="rounded-2xl border border-white/30 bg-white/85 backdrop-blur-xl shadow p-5">
-                <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <div class="rounded-2xl border border-white/30 bg-white/85 backdrop-blur shadow p-5">
+                <div class="mb-3 flex items-center justify-between">
                   <h2 class="text-lg font-semibold">Pilih Petugas</h2>
                   <div class="flex items-center gap-3">
-                    <button type="button" wire:click="$set('counterId', null)" class="text-sm underline text-black/90 hover:text-black focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 rounded">Kembali ke Loket</button>
-                    <button type="button" wire:click="backToStart" class="text-sm underline text-black/90 hover:text-black focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 rounded">Ulang dari Layanan</button>
-                    <button type="button" wire:click="backToLanding" class="text-sm underline text-black/90 hover:text-black focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 rounded">Kembali ke Landing</button>
+                    <button type="button" wire:click="$set('counterId', null)" class="text-sm underline text-black hover:text-neutral-700">Kembali ke Loket</button>
+                    <button type="button" wire:click="backToStart" class="text-sm underline text-black hover:text-neutral-700">Ulang dari Layanan</button>
+                    <button type="button" wire:click="backToLanding" class="text-sm underline text-black hover:text-neutral-700">Kembali ke Landing</button>
                   </div>
                 </div>
 
@@ -210,9 +213,9 @@
                     @foreach ($staffOptions as $s)
                       <button type="button"
                               wire:click="selectStaff({{ (int)$s['id'] }})"
-                              class="relative p-3 rounded-xl text-left transition flex items-center gap-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60
+                              class="relative p-3 rounded-xl text-left transition flex items-center gap-3
                                      {{ $staffId==$s['id']
-                                        ? 'text-white bg-gradient-to-r from-[#F59E0B] to-[#1E40AF] border-0 shadow motion-safe:hover:scale-[1.01]'
+                                        ? 'text-white bg-gradient-to-r from-[#F59E0B] to-[#1E40AF] border-0 shadow'
                                         : 'border border-white/40 bg-white/80 hover:bg-white text-neutral-900' }}">
                         <div class="w-20 md:w-24 aspect-[3/4] overflow-hidden rounded-lg bg-neutral-200 shrink-0">
                           <img
@@ -238,10 +241,10 @@
 
             {{-- STAGE 4: NILAI --}}
             @if ($stage === 4)
-              <div class="rounded-2xl border border-white/30 bg-white/85 backdrop-blur-xl shadow p-5">
+              <div class="rounded-2xl border border-white/30 bg-white/85 backdrop-blur shadow p-5">
                 <div class="mb-3 flex items-center justify-between">
                   <h2 class="text-lg font-semibold">Seberapa puas?</h2>
-                  <button type="button" wire:click="$set('staffId', null)" class="text-sm underline text-black/90 hover:text-black focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 rounded">Kembali ke Petugas</button>
+                  <button type="button" wire:click="$set('staffId', null)" class="text-sm underline text-black hover:text-neutral-700">Kembali ke Petugas</button>
                 </div>
 
                 <div role="radiogroup" aria-label="Pilih nilai" class="grid grid-cols-5 gap-3">
@@ -252,9 +255,9 @@
                             aria-checked="{{ $active ? 'true' : 'false' }}"
                             aria-label="{{ $i }} - {{ $emojiLabels[$i] }}"
                             wire:click="$set('score', {{ $i }})"
-                            class="h-24 rounded-xl border flex flex-col items-center justify-center text-center transition select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60
+                            class="h-24 rounded-xl border flex flex-col items-center justify-center text-center transition
                                    {{ $active
-                                      ? 'text-white bg-gradient-to-r from-[#F59E0B] to-[#1E40AF] border-0 shadow motion-safe:hover:scale-[1.02]'
+                                      ? 'text-white bg-gradient-to-r from-[#F59E0B] to-[#1E40AF] border-0 shadow'
                                       : 'border border-white/40 bg-white/80 hover:bg-white text-neutral-900' }}">
                       <span class="text-3xl leading-none">{{ $emojis[$i] }}</span>
                       <span class="mt-1 text-[11px]">{{ $emojiLabels[$i] }}</span>
@@ -266,23 +269,21 @@
 
             {{-- STAGE 5: KOMENTAR + SUBMIT --}}
             @if ($stage === 5)
-              <div class="rounded-2xl border border-white/30 bg-white/85 backdrop-blur-xl shadow p-5">
+              <div class="rounded-2xl border border-white/30 bg-white/85 backdrop-blur shadow p-5">
                 <div class="mb-3 flex items-center justify-between">
                   <h2 class="text-lg font-semibold">Komentar (opsional)</h2>
-                  <button type="button" wire:click="$set('score', null)" class="text-sm underline text-black/90 hover:text-black focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 rounded">Ubah Nilai</button>
+                  <button type="button" wire:click="$set('score', null)" class="text-sm underline text-black hover:text-neutral-700">Ubah Nilai</button>
                 </div>
 
-                <label for="comment" class="sr-only">Komentar</label>
                 <textarea
-                  id="comment"
                   wire:model="comment"
                   maxlength="200"
                   placeholder="Tulis komentar singkat (maks 200 karakter)"
-                  class="w-full border border-white/40 bg-white/80 rounded-xl p-3 text-neutral-900 placeholder-neutral-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 mb-4"></textarea>
+                  class="w-full border border-white/40 bg-white/80 rounded-xl p-3 text-neutral-900 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-white/60 mb-4"></textarea>
 
                 <div class="flex items-center justify-between">
-                  <button type="button" wire:click="backToLanding" class="px-4 py-3 rounded-xl border border-white/40 bg-white/80 hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60">Batal</button>
-                  <button type="button" wire:click="submit" class="px-6 py-3 rounded-xl text-white font-semibold bg-gradient-to-r from-[#F59E0B] to-[#1E40AF] hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60">
+                  <button type="button" wire:click="backToLanding" class="px-4 py-3 rounded-xl border border-white/40 bg-white/80 hover:bg-white">Batal</button>
+                  <button type="button" wire:click="submit" class="px-6 py-3 rounded-xl text-white font-semibold bg-gradient-to-r from-[#F59E0B] to-[#1E40AF] hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-white/60">
                     Kirim
                   </button>
                 </div>
@@ -292,7 +293,7 @@
 
           {{-- KANAN: RINGKASAN --}}
           <aside class="col-span-12 lg:col-span-5 xl:col-span-4">
-            <div class="rounded-2xl border border-white/30 bg-white/85 backdrop-blur-xl shadow p-5 mb-4">
+            <div class="rounded-2xl border border-white/30 bg-white/85 backdrop-blur shadow p-5 mb-4">
               <h3 class="font-semibold text-neutral-900 mb-3">Ringkasan</h3>
               <dl class="text-sm space-y-2">
                 <div class="flex items-start justify-between gap-3">
@@ -320,7 +321,7 @@
               </dl>
             </div>
 
-            <div class="rounded-2xl border border-white/30 bg-white/85 backdrop-blur-xl shadow p-5">
+            <div class="rounded-2xl border border-white/30 bg-white/85 backdrop-blur shadow p-5">
               <h3 class="font-semibold text-neutral-900 mb-3">Petugas Terpilih</h3>
               @if ($selectedStaff)
                 <div class="flex items-start gap-4">
