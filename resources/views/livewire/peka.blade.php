@@ -111,11 +111,7 @@
                   class="px-6 py-3 rounded-xl text-white font-semibold bg-gradient-to-r from-[#F59E0B] to-[#1E40AF] hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-white/60">
                   Mulai Penilaian
                 </button>
-                <button type="button"
-                  wire:click="startAtStaff"
-                  class="px-4 py-3 rounded-xl border border-white/40 bg-white/80 hover:bg-white">
-                  Saya sudah di loket
-                </button>
+                
               </div>
             </div>
             <div class="rounded-2xl border border-white/30 bg-white/70 p-5">
