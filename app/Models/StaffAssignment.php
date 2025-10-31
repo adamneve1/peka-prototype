@@ -7,20 +7,21 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class StaffAssignment extends Model
 {
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'staff_id',
-        'counter_id', // <-- INI YANG PERLU DITAMBAHKAN
+        'counter_id',
         'service_id',
         'starts_at',
         'ends_at',
+        'note',
+        'is_primary', // tambahin ini
     ];
 
-    // ... (relasi-relasi yang sudah kamu buat tadi) ...
+    protected $casts = [
+        'is_primary' => 'boolean',
+        'starts_at'  => 'datetime',
+        'ends_at'    => 'datetime',
+    ];
 
     public function staff(): BelongsTo
     {

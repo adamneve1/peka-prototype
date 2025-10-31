@@ -92,7 +92,7 @@ class StaffAssignmentSeeder extends Seeder
                 'starts_at'  => $startJakarta->copy()->timezone('UTC'),
                 'ends_at'    => $endJakarta->copy()->timezone('UTC'),
                 'note'       => 'primary',
-              //  'is_primary' => 1,          // <— TAMBAH INI
+                'is_primary' => 1,          // <— TAMBAH INI
                 'created_at' => $now,
                 'updated_at' => $now,
             ];
