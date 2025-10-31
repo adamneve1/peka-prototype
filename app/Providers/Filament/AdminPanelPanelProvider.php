@@ -33,6 +33,7 @@ class AdminPanelPanelProvider extends PanelProvider
             ->id('adminPanel')
             ->path('adminPanel')
             ->login()
+             ->authGuard('web');
         
             
 
