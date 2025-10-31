@@ -65,7 +65,7 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+     'timezone' => env('APP_TIMEZONE', 'Asia/Jakarta'),
 
     /*
     |--------------------------------------------------------------------------
@@ -78,11 +78,10 @@ return [
     |
     */
 
-    'locale' => 'id',
-'fallback_locale' => 'en',
-
-
+     'locale' => env('APP_LOCALE', 'id'),
     'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
+
+
 
     'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),
 
@@ -101,7 +100,7 @@ return [
 
     'key' => env('APP_KEY'),
 
-    'previous_keys' => [
+   'previous_keys' => [
         ...array_filter(
             explode(',', (string) env('APP_PREVIOUS_KEYS', ''))
         ),
@@ -120,9 +119,9 @@ return [
     |
     */
 
-    'maintenance' => [
+     'maintenance' => [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
-        'store' => env('APP_MAINTENANCE_STORE', 'database'),
+        'store' => env('APP_MAINTENANCE_STORE', 'file'),
     ],
 
 ];
