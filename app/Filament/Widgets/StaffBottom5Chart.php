@@ -11,9 +11,10 @@ class StaffBottom5Chart extends ChartWidget
 {
     protected ?string $heading = 'Leaderboard Petugas (Bottom 5)';
     protected string $color = 'danger';
+    protected ?string $maxHeight = null;
 
-    protected int|string|array $columnSpan = ['md' => 6, 'xl' => 4];
-    protected ?string $maxHeight = '240px'; // non-static
+  //  protected int|string|array $columnSpan = ['md' => 6, 'xl' => 4];
+   // protected ?string $maxHeight = '240px'; // non-static
 
     protected function getData(): array
     {

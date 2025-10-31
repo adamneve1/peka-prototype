@@ -80,15 +80,27 @@ class StaffLeaderboard extends ChartWidget
                 'datasets' => [[
                     'label' => 'Bayes Score',
                     'data' => [],
+                    'backgroundColor' => [],
+                    'borderWidth' => 0,
                 ]],
             ];
         }
 
+        // === Perubahan utama: warna per-bar ===
+        $labels  = $leaders->pluck('name')->all();
+        $data    = $leaders->pluck('bayes_score')->map(fn ($v) => round((float) $v, 2))->all();
+
+        // Palet ala Bottom 5 (solid, bukan gradient)
+        $palette = ['#EF4444','#F97316','#F59E0B','#FB923C','#FDBA74'];
+        $colors  = array_slice($palette, 0, count($data));
+
         return [
-            'labels' => $leaders->pluck('name')->all(),
+            'labels' => $labels,
             'datasets' => [[
                 'label' => 'Bayes Score',
-                'data'  => $leaders->pluck('bayes_score')->map(fn ($v) => round((float) $v, 2))->all(),
+                'data'  => $data,
+                'backgroundColor' => $colors,
+                'borderWidth' => 0,
             ]],
         ];
     }
