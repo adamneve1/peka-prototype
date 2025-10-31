@@ -2,111 +2,192 @@
 
 namespace App\Filament\Resources\Ratings\Tables;
 
-use App\Models\Rating;                 // ← penting
-use Filament\Actions\ViewAction;
+use Illuminate\Database\Eloquent\Builder;
+use App\Models\Rating;
+
 use Filament\Forms;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\TextInput;
+
 use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\Summarizers\Average;
+use Filament\Tables\Columns\Summarizers\Count;
 use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
+
+use Filament\Actions\ViewAction; // ← penting: v4 pakai ini, bukan Filament\Tables\Actions\ViewAction
+
+use Filament\Infolists;
+use Filament\Infolists\Components\TextEntry;
 
 class RatingsTable
 {
     public static function configure(Table $table): Table
     {
         return $table
-            ->query(                               // ← pakai query() bukan modifyQueryUsing()
-                Rating::query()
-                    ->with(['counter:id,name','service:id,name','staff:id,name'])
+            // query + eager load
+            ->query(
+                Rating::query()->with(['counter:id,name', 'service:id,name', 'staff:id,name'])
             )
-            ->defaultSort('created_at','desc')
+            ->defaultSort('created_at', 'desc')
+            ->paginationPageOptions([10, 25, 50, 100])
+            ->poll('60s') // auto refresh 60 detik
+            ->persistFiltersInSession()
             ->columns([
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->label('Waktu')
                     ->dateTime('d M Y H:i')
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
 
-                Tables\Columns\TextColumn::make('counter.name')
+                TextColumn::make('counter.name')
                     ->label('Loket')
                     ->sortable()
-                    ->searchable(),
+                    ->searchable()
+                    ->toggleable(),
 
-                Tables\Columns\TextColumn::make('service.name')
+                TextColumn::make('service.name')
                     ->label('Layanan')
                     ->sortable()
-                    ->searchable(),
+                    ->searchable()
+                    ->toggleable(),
 
-                Tables\Columns\TextColumn::make('staff.name')
+                TextColumn::make('staff.name')
                     ->label('Petugas')
                     ->placeholder('-')
                     ->sortable()
-                    ->searchable(),
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
 
-                Tables\Columns\TextColumn::make('score')
+                TextColumn::make('score')
                     ->label('Skor')
                     ->badge()
+                    ->formatStateUsing(fn ($state) => "{$state}/5")
                     ->sortable()
                     ->color(fn ($state) => match (true) {
                         $state <= 2 => 'danger',
                         $state === 3 => 'warning',
                         $state >= 4 => 'success',
                         default => null,
-                    }),
+                    })
+                    ->summarize([
+                        Average::make()->label('Rata2'),
+                    ]),
 
-                Tables\Columns\TextColumn::make('comment')
+                TextColumn::make('comment')
                     ->label('Komentar')
                     ->limit(120)
-                    ->wrap(),
+                    ->wrap()
+                    ->tooltip(fn ($record) => $record->comment ?: null)
+                    ->toggleable()
+                    ->summarize([
+                        Count::make()->label('Jumlah'),
+                    ]),
             ])
             ->filters([
-    // by relasi
-    \Filament\Tables\Filters\SelectFilter::make('counter_id')
-        ->label('Loket')->relationship('counter','name'),
+                // filter relasi
+                SelectFilter::make('counter_id')
+                    ->label('Loket')
+                    ->relationship('counter', 'name')
+                    ->searchable(),
 
-    \Filament\Tables\Filters\SelectFilter::make('service_id')
-        ->label('Layanan')->relationship('service','name'),
+                SelectFilter::make('service_id')
+                    ->label('Layanan')
+                    ->relationship('service', 'name')
+                    ->searchable(),
 
-    \Filament\Tables\Filters\SelectFilter::make('staff_id')
-        ->label('Petugas')->relationship('staff','name'),
+                SelectFilter::make('staff_id')
+                    ->label('Petugas')
+                    ->relationship('staff', 'name')
+                    ->searchable(),
 
-    // preset date filters (aman, 1 argumen)
-    \Filament\Tables\Filters\Filter::make('today')
-        ->label('Hari ini')
-        ->query(fn ($q) => $q->whereDate('created_at', today())),
+                // date range
+                Filter::make('tanggal')
+                    ->label('Rentang Tanggal')
+                    ->form([
+                        DatePicker::make('from')->label('Dari'),
+                        DatePicker::make('until')->label('Sampai'),
+                    ])
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+                        if ($data['from'] ?? null) {
+                            $indicators[] = 'Dari: ' . \Carbon\Carbon::parse($data['from'])->format('d M Y');
+                        }
+                        if ($data['until'] ?? null) {
+                            $indicators[] = 'Sampai: ' . \Carbon\Carbon::parse($data['until'])->format('d M Y');
+                        }
+                        return $indicators;
+                    })
+                    ->query(function (Builder $query, array $data) {
+                        return $query
+                            ->when($data['from'] ?? null, fn ($q, $date) => $q->whereDate('created_at', '>=', $date))
+                            ->when($data['until'] ?? null, fn ($q, $date) => $q->whereDate('created_at', '<=', $date));
+                    }),
 
-    \Filament\Tables\Filters\Filter::make('last7')
-        ->label('7 hari terakhir')
-        ->query(fn ($q) => $q->where('created_at', '>=', now()->subDays(7))),
+                // score range
+                Filter::make('score_range')
+                    ->label('Rentang Skor')
+                    ->form([
+                        TextInput::make('min')->numeric()->minValue(1)->maxValue(5)->label('Min'),
+                        TextInput::make('max')->numeric()->minValue(1)->maxValue(5)->label('Max'),
+                    ])
+                    ->indicateUsing(function (array $data): array {
+                        $i = [];
+                        if (filled($data['min'] ?? null)) {
+                            $i[] = 'Skor ≥ ' . $data['min'];
+                        }
+                        if (filled($data['max'] ?? null)) {
+                            $i[] = 'Skor ≤ ' . $data['max'];
+                        }
+                        return $i;
+                    })
+                    ->query(function (Builder $query, array $data) {
+                        return $query
+                            ->when(filled($data['min'] ?? null), fn ($q) => $q->where('score', '>=', (int) $data['min']))
+                            ->when(filled($data['max'] ?? null), fn ($q) => $q->where('score', '<=', (int) $data['max']));
+                    }),
 
-    \Filament\Tables\Filters\Filter::make('last30')
-        ->label('30 hari terakhir')
-        ->query(fn ($q) => $q->where('created_at', '>=', now()->subDays(30))),
+                // hanya yang punya komentar
+                Filter::make('has_comment')
+                    ->label('Dengan Komentar')
+                    ->query(fn (Builder $q) => $q->whereNotNull('comment')->where('comment', '<>', '')),
 
-    // skor rendah
-    \Filament\Tables\Filters\Filter::make('low')
-        ->label('Skor ≤ 2')
-        ->query(fn ($q) => $q->where('score','<=',2)),
-])
+                // preset cepat
+                Filter::make('today')
+                    ->label('Hari ini')
+                    ->query(fn (Builder $q) => $q->whereDate('created_at', today())),
 
+                Filter::make('last7')
+                    ->label('7 hari terakhir')
+                    ->query(fn (Builder $q) => $q->where('created_at', '>=', now()->subDays(7))),
+
+                Filter::make('last30')
+                    ->label('30 hari terakhir')
+                    ->query(fn (Builder $q) => $q->where('created_at', '>=', now()->subDays(30))),
+
+                Filter::make('low')
+                    ->label('Skor ≤ 2')
+                    ->query(fn (Builder $q) => $q->where('score', '<=', 2)),
+            ])
+            ->filtersFormColumns(3)
             ->recordActions([
                 ViewAction::make()
                     ->modalHeading('Detail Rating')
                     ->modalWidth('lg')
-                    ->form([
-                        Forms\Components\Placeholder::make('waktu')->label('Waktu')
-                            ->content(fn($r)=>$r->created_at->format('d M Y H:i')),
-                        Forms\Components\Placeholder::make('loket')->label('Loket')
-                            ->content(fn($r)=>optional($r->counter)->name),
-                        Forms\Components\Placeholder::make('layanan')->label('Layanan')
-                            ->content(fn($r)=>optional($r->service)->name),
-                        Forms\Components\Placeholder::make('petugas')->label('Petugas')
-                            ->content(fn($r)=>optional($r->staff)->name ?? '-'),
-                        Forms\Components\Placeholder::make('skor')->label('Skor')
-                            ->content(fn($r)=>(string)$r->score),
-                        Forms\Components\Textarea::make('comment')->label('Komentar')
-                            ->disabled()
-                            ->rows(6),
+                    ->slideOver()
+                    ->infolist([
+                        TextEntry::make('created_at')->label('Waktu')->dateTime('d M Y H:i')->placeholder('-'),
+                        TextEntry::make('counter.name')->label('Loket')->placeholder('-'),
+                        TextEntry::make('service.name')->label('Layanan')->placeholder('-'),
+                        TextEntry::make('staff.name')->label('Petugas')->placeholder('-'),
+                        TextEntry::make('score')->label('Skor'),
+                        TextEntry::make('comment')->label('Komentar')->wrap()->columnSpanFull(),
                     ]),
-            ]);
+            ])
+            ->emptyStateHeading('Belum ada rating')
+            ->emptyStateDescription('Saat data masuk, daftar rating akan muncul di sini.')
+            ->striped();
     }
 }
