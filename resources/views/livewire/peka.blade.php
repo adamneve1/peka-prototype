@@ -351,3 +351,23 @@
     </main>
   </div>
 </div>
+
+@push('scripts')
+<script>
+  document.addEventListener('livewire:initialized', () => {
+    const title = document.querySelector('title');
+
+    const updateTitle = () => {
+      const mode = @json($mode);
+      if (mode === 'landing') {
+        document.title = 'PEKA – Penilaian Layanan DUKCAPIL PRIMA';
+      } else {
+        document.title = 'PEKA';
+      }
+    };
+
+    updateTitle(); // set pas pertama kali load
+    Livewire.hook('morph.updated', updateTitle); // update tiap Livewire re-render
+  });
+</script>
+@endpush
