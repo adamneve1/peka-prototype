@@ -2,269 +2,213 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Laporan Leaderboard Pegawai</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <title>Laporan Kinerja Pegawai</title>
 
     <style>
-        @page { margin: 15mm; }
+        @page { 
+            margin: 2.5cm; 
+            size: A4;
+        }
         
-        /* RESET & CORE */
         body {
-            font-family: 'Inter', sans-serif;
-            font-size: 12px;
+            font-family: "Times New Roman", Times, serif;
+            font-size: 12pt;
             line-height: 1.5;
-            color: #000000; /* Hitam pekat, bukan abu-abu */
-            background: #fff;
+            color: #000;
         }
 
-        /* UTILITIES */
-        .mono { font-family: 'Space Mono', 'Courier New', monospace; }
-        .bold { font-weight: 800; }
-        .uppercase { text-transform: uppercase; }
+        /* JUDUL */
+        .judul {
+            text-align: center;
+            font-weight: bold;
+            font-size: 14pt;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+            text-decoration: underline;
+        }
 
-        /* HEADER SECTION - Neo Brutalist Style */
-        .header {
-            display: block;
+        .sub-judul {
+            text-align: center;
+            font-size: 12pt;
             margin-bottom: 30px;
-            border-bottom: 3px solid #000;
-            padding-bottom: 20px;
-            position: relative;
         }
 
-        .header h1 {
-            font-family: 'Inter', sans-serif;
-            font-weight: 900; /* Extra Bold */
-            font-size: 24px;
-            margin: 0;
-            letter-spacing: -0.5px;
-            line-height: 1;
-            text-transform: uppercase;
-        }
-
-        .header .sub {
-            font-family: 'Space Mono', monospace;
-            font-size: 11px;
-            color: #000;
-            margin-top: 6px;
-            letter-spacing: 1px;
-        }
-
-        /* PERIOD BADGE - Pill Shape with Outline */
-        .period-badge {
-            display: inline-block;
-            margin-top: 15px;
-            padding: 6px 16px;
-            border: 1.5px solid #000;
-            border-radius: 50px; /* Full Pill */
-            font-family: 'Space Mono', monospace;
-            font-size: 10px;
-            font-weight: 700;
-            background: #fff;
-            box-shadow: 2px 2px 0px #000; /* Hard Shadow effect */
-        }
-
-        /* TABLE STYLING - High Contrast */
-        table {
+        /* TABEL INFO */
+        .table-info {
             width: 100%;
-            margin-top: 20px;
+            margin-bottom: 15px;
+            font-size: 12pt;
+        }
+        .table-info td {
+            vertical-align: top;
+            padding: 2px 0;
+        }
+
+        /* TABEL DATA */
+        .table-data {
+            width: 100%;
             border-collapse: collapse;
-            border: 2px solid #000;
+            margin-bottom: 20px;
+        }
+        
+        .table-data th, .table-data td {
+            border: 1px solid #000;
+            padding: 8px;
+            vertical-align: middle;
         }
 
-        table th {
-            background: #000;
-            color: #fff;
-            border: 2px solid #000;
-            padding: 12px 10px;
-            font-family: 'Inter', sans-serif;
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        table td {
-            border: 1.5px solid #000; /* Garis tebal */
-            padding: 10px 12px;
-            font-size: 12px;
-            color: #000;
-        }
-
-        /* COLUMN SPECIFICS */
-        td.rank-col {
-            background: #f0f0f0; /* Sedikit pattern */
-            font-family: 'Space Mono', monospace;
+        .table-data th {
             font-weight: bold;
             text-align: center;
+            background-color: #fff; 
+            font-size: 11pt;
         }
 
-        td.name-col {
-            font-weight: 600;
+        .table-data td {
+            font-size: 11pt;
         }
 
-        td.data-col {
-            font-family: 'Space Mono', monospace; /* Angka pakai monospace */
+        /* UTILS */
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .text-bold { font-weight: bold; }
+
+        /* TANDA TANGAN */
+        .signature-section {
+            margin-top: 40px;
+            width: 100%;
+        }
+        .signature-box {
+            float: right; 
+            width: 280px;
             text-align: center;
         }
-
-        /* FOOTER & SIGNATURE */
-        .footer-section {
-            margin-top: 40px;
-            page-break-inside: avoid;
-        }
-
-        .signature-box {
-            float: right;
-            width: 220px;
-            text-align: left; /* Align left inside the box looks cleaner modern */
-        }
-
-        .signature-date {
-            font-family: 'Space Mono', monospace;
-            font-size: 10px;
-            margin-bottom: 4px;
-        }
-
-        .signature-title {
-            font-size: 11px;
-            font-weight: 600;
-            margin-bottom: 60px; /* Ruang ttd */
-        }
-
         .signature-name {
-            font-weight: 800;
-            font-size: 12px;
+            margin-top: 70px; 
+            font-weight: bold;
             text-decoration: underline;
-            text-decoration-thickness: 2px; /* Garis bawah tebal */
         }
-
-        .signature-nip {
-            font-family: 'Space Mono', monospace;
-            font-size: 10px;
-            margin-top: 2px;
-        }
-
-        /* BOTTOM BAR */
-        .generated {
-            position: fixed;
-            bottom: 0;
-            left: 15mm;
-            right: 15mm;
-            border-top: 1.5px solid #000;
-            padding-top: 8px;
-            font-family: 'Space Mono', monospace;
-            font-size: 9px;
-            display: flex;
-            justify-content: space-between;
-        }
-        /* ... CSS lainnya ... */
-
-/* Container untuk badge supaya sejajar */
-.badge-group {
-    margin-top: 15px;
-}
-
-/* Style dasar badge (dipakai untuk Periode) */
-.badge {
-    display: inline-block;
-    padding: 6px 16px;
-    border: 1.5px solid #000;
-    border-radius: 50px;
-    font-family: 'Space Mono', monospace;
-    font-size: 10px;
-    font-weight: 700;
-    background: #fff;
-    color: #000;
-    box-shadow: 2px 2px 0px #000;
-    margin-right: 8px; /* Jarak antar badge */
-}
-
-/* Style khusus untuk Total Suara (Hitam pekat) */
-.badge.dark {
-    background: #000;
-    color: #fff;
-    border: 1.5px solid #000; /* Border tetap hitam menyatu */
-    box-shadow: 2px 2px 0px #999; /* Shadow jadi abu-abu biar kelihatan depth-nya */
-}
     </style>
 </head>
 
 <body>
 
-    @php
-        $rows = $rows ?? [];
-        $filters = $filters ?? ['from'=>null,'to'=>null,'range'=>null,'min5'=>false];
-    @endphp
-
-    <div class="header">
-    <h1>Laporan Pemeringkatan Pegawai</h1>
-    <div class="sub">// SISTEM PENILAIAN EMOJI KINERJA APARATUR (PEKA)</div>
-
-    @php
-        $f = $filters['from'] ?? null; 
-        $t = $filters['to'] ?? null;
-        // Hitung total semua 'cnt' (jumlah vote) dari rows yang ada
-        $totalVotes = collect($rows)->sum('cnt'); 
-    @endphp
-
-    <div class="badge-group">
-        <div class="badge">
-            @if($f && $t)
-                PERIODE: {{ \Carbon\Carbon::parse($f)->format('d M Y') }} — {{ \Carbon\Carbon::parse($t)->format('d M Y') }}
-            @elseif(!empty($filters['range']) && $filters['range'] === '7d')
-                RANGE: 7 HARI TERAKHIR
-            @elseif(!empty($filters['range']) && $filters['range'] === '30d')
-                RANGE: 30 HARI TERAKHIR
-            @else
-                RANGE: SEMUA WAKTU
-            @endif
-        </div>
-
-        <div class="badge dark">
-            TOTAL PENILAIAN: {{ number_format($totalVotes) }}
-        </div>
+    <div class="judul">
+        LAPORAN PEMERINGKATAN KINERJA PEGAWAI
     </div>
-</div>
+    <div class="sub-judul">
+        Sistem Penilaian Emoji Kinerja Aparatur (PEKA)
+    </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th width="8%">#</th>
-                <th style="text-align:left;">NAMA PEGAWAI</th>
-                <th width="25%">RATA-RATA / SUARA</th>
-                <th width="25%">SKOR PELAYANAN</th>
-            </tr>
-        </thead>
+    @php
+        $f = $filters['from'] ?? null;
+        $t = $filters['to'] ?? null;
+        $totalVotes = collect($rows)->sum('cnt');
+        
+        // Format Tanggal Indonesia Manual
+        $months = [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 5 => 'Mei', 6 => 'Juni',
+            7 => 'Juli', 8 => 'Agustus', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+        ];
 
-      <tbody>
-    @forelse($rows as $r)
+        $formatDateIndo = function($date) use ($months) {
+            $d = \Carbon\Carbon::parse($date);
+            return $d->format('d') . ' ' . $months[$d->format('n')] . ' ' . $d->format('Y');
+        };
+
+        $periodeStr = 'Semua Waktu';
+        if($f && $t) {
+            $periodeStr = $formatDateIndo($f) . ' s.d. ' . $formatDateIndo($t);
+        } elseif(($filters['range'] ?? '') == '7d') {
+            $periodeStr = '7 Hari Terakhir';
+        } elseif(($filters['range'] ?? '') == '30d') {
+            $periodeStr = '30 Hari Terakhir';
+        }
+    @endphp
+
+    <table class="table-info">
         <tr>
-            <td class="rank-col">
-                {{ str_pad($loop->iteration, 2, '0', STR_PAD_LEFT) }}
-            </td>
-            <td class="name-col">{{ $r['name'] ?? '-' }}</td>
-            <td class="data-col">
-                {{ number_format($r['avg'], 2) }} <span style="font-size:10px; color:#666;">/ {{ $r['cnt'] }} VOTES</span>
-            </td>
-            
-            <td class="data-col" style="font-weight:bold;">
-                <span style="font-size: 14px;">{{ number_format($r['bayes'], 2) }}</span><span style="font-size: 10px; color: #888; margin-left: 2px; font-weight: normal;">/5</span>
-            </td>
-            </tr>
-    @empty
-        <tr>
-            <td colspan="4" style="text-align:center; padding:30px; font-family:'Space Mono', monospace;">
-                // NO_DATA_AVAILABLE_FOR_THIS_PERIOD
-            </td>
+            <td width="140">Periode</td>
+            <td width="10">:</td>
+            <td>{{ $periodeStr }}</td>
         </tr>
-    @endforelse
-</tbody>
+        <tr>
+            <td>Total Responden</td>
+            <td>:</td>
+            <td>{{ number_format($totalVotes, 0, ',', '.') }} Suara</td>
+        </tr>
+        <tr>
+            <td>Tanggal Cetak</td>
+            <td>:</td>
+            <td>{{ $formatDateIndo(now()) }}</td>
+        </tr>
     </table>
 
+    <table class="table-data">
+        <thead>
+            <tr>
+                <th width="5%">No</th>
+                <th>Nama Pegawai</th>
+                <th width="20%">Jumlah Penilaian</th>
+                <th width="20%">Rata-Rata</th>
+                <th width="20%">Skor Pelayanan<br>(Maks 5,00)</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse($rows as $r)
+                <tr>
+                    <td class="text-center">{{ $loop->iteration }}</td>
+                    <td>{{ $r['name'] ?? '-' }}</td>
+                    <td class="text-center">{{ $r['cnt'] }}</td>
+                    <td class="text-center">
+                        @if($r['cnt'] == 0)
+                            -
+                        @else
+                            {{ number_format($r['avg'], 2, ',', '.') }}
+                        @endif
+                    </td>
+                    <td class="text-center">
+                        {{-- LOGIKA STATUS NILAI --}}
+                        @if($r['cnt'] == 0)
+                            {{-- KASUS 0 SUARA --}}
+                            <span style="font-style: italic; font-size: 10pt;">Belum Dinilai</span>
+                        
+                        @elseif($r['cnt'] < 5)
+                            {{-- KASUS KURANG DARI 5 SUARA --}}
+                            <div class="text-bold">
+                                {{ number_format($r['bayes'], 2, ',', '.') }} <span style="font-weight:normal; font-size:10pt;">/ 5</span>
+                            </div>
+                            <div style="font-style: italic; font-size: 9pt; margin-top: 2px;">
+                                (*Kurang Data)
+                            </div>
+                        
+                        @else
+                            {{-- KASUS NORMAL (>= 5) --}}
+                            <span class="text-bold">
+                                {{ number_format($r['bayes'], 2, ',', '.') }}
+                            </span>
+                            <span style="font-weight: normal; font-size: 10pt;"> / 5</span>
+                        @endif
+                    </td>
+                </tr>
+            @empty
+                <tr>
+                    <td colspan="5" class="text-center" style="padding: 20px; font-style:italic;">
+                        Data tidak ditemukan pada periode ini.
+                    </td>
+                </tr>
+            @endforelse
+        </tbody>
+    </table>
 
-    <div class="generated">
-        <span>GEN: AUTOMATED_SYSTEM</span>
-        <span>{{ \Carbon\Carbon::now()->format('d/m/Y H:i:s') }}</span>
+    <div class="signature-section">
+        <div class="signature-box">
+            <div>Batam, {{ $formatDateIndo(now()) }}</div>
+            <div style="margin-bottom: 5px;">Kepala Unit / Atasan Langsung,</div>
+            
+            <div class="signature-name">NAMA PEJABAT</div>
+            <div>NIP. 19800101 200012 1 001</div>
+        </div>
     </div>
 
 </body>
