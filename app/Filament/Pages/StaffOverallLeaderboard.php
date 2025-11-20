@@ -248,8 +248,20 @@ protected function resolveRangeFromFilters(?array $filters): ?array
                 ->label('Export PDF')
                 ->icon('heroicon-o-document-text')
                 ->color('secondary')
+                 ->action('prepareExport') // panggil method di Page
+          
                 ->url(fn () => route('staff.leaderboard.pdf', $query))
                 ->openUrlInNewTab(),
         ];
     }
+    public function prepareExport()
+{
+    $filters = $this->getTableFilterState('table') ?? [];
+    // build URL with filters
+    $url = route('staff.leaderboard.pdf', $filters);
+    // return JS to open new tab
+    return $this->dispatchBrowserEvent('open-export-url', ['url' => $url]);
 }
+
+}
+

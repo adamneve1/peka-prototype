@@ -42,32 +42,40 @@
         @endforeach
     </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th>#</th>
-                <th>Staff</th>
-                <th class="right">Bayes Score</th>
-                <th class="right">Avg (raw)</th>
-                <th class="right">Votes</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach($rows as $index => $r)
-            <tr>
-                <td>{{ $index + 1 }}</td>
-                <td>
-                    @if($r['photo'])
-                        <img src="{{ $r['photo'] }}" style="width:28px;height:28px;object-fit:cover;border-radius:50%;vertical-align:middle;margin-right:6px;">
-                    @endif
-                    {{ $r['name'] }}
-                </td>
-                <td class="right">{{ number_format($r['bayes'], 4) }}</td>
-                <td class="right">{{ number_format($r['avg'], 2) }}</td>
-                <td class="right">{{ $r['cnt'] }}</td>
-            </tr>
-            @endforeach
-        </tbody>
-    </table>
+    <table style="width:100%; border-collapse: collapse; font-family: sans-serif;">
+    <thead>
+        <tr>
+            <th style="text-align:left; padding:8px; width:40px;">#</th>
+            <th style="text-align:left; padding:8px;">Name</th>
+            <th style="text-align:left; padding:8px;">Avg / Votes</th>
+            <th style="text-align:left; padding:8px;">Bayes</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        @foreach($rows as $r)
+        <tr style="border-top:1px solid #eee;">
+            <td style="padding:8px; vertical-align:middle;">{{ $loop->iteration }}</td>
+
+            <td style="padding:8px; vertical-align:middle;">
+                <div style="font-weight:600;">{{ $r['name'] ?? '-' }}</div>
+                <div style="font-size:11px;color:#6b7280;">
+                    Avg: {{ number_format($r['avg'],2) }} — Votes: {{ $r['cnt'] }}
+                </div>
+            </td>
+
+            <td style="padding:8px; vertical-align:middle;">
+                {{ number_format($r['avg'],2) }} / {{ $r['cnt'] }}
+            </td>
+
+            <td style="padding:8px; vertical-align:middle;">
+                {{ number_format($r['bayes'],4) }}
+            </td>
+        </tr>
+        @endforeach
+    </tbody>
+</table>
+
+
 </body>
 </html>
