@@ -42,79 +42,48 @@ class StaffOverallLeaderboard extends Page implements HasTable
      * $range = ['from' => Carbon, 'to' => Carbon] or null
      * $minVotes = integer or null
      */
-  protected function bayesianStaffQuery(?array $range = null, ?int $minVotes = null, int $m = 10)
-{
-    // global mean C (respect range)
-    $global = Rating::query();
-    if ($range) {
-        $global->whereBetween('created_at', [$range['from'], $range['to']]);
+    protected function bayesianStaffQuery(?array $range = null, ?int $minVotes = null, int $m = 10)
+    {
+        // Global mean C within range (if provided)
+        $global = Rating::query();
+        if ($range) {
+            $global->whereBetween('created_at', [$range['from'], $range['to']]);
+        }
+        $C = (float) ($global->avg('score') ?? 0);
+
+        // Aggregation per staff, filtered by range and minVotes
+        $agg = Rating::query()
+            ->select('staff_id')
+            ->when($range, fn ($q) => $q->whereBetween('created_at', [$range['from'], $range['to']]))
+            ->selectRaw('COUNT(*) as ratings_count')
+            ->selectRaw('ROUND(AVG(score), 2) as ratings_avg_score')
+            ->groupBy('staff_id')
+            ->when($minVotes, fn ($q) => $q->havingRaw('COUNT(*) >= ?', [$minVotes]));
+
+        // Debug: log the subquery SQL
+        logger()->debug('LB AGG SQL', ['sql' => $agg->toSql(), 'bindings' => $agg->getBindings()]);
+
+        $staffQ = Staff::query()
+            ->leftJoinSub($agg, 'r', 'r.staff_id', '=', 'staff.id')
+            ->select('staff.*')
+            ->addSelect([
+                DB::raw('COALESCE(r.ratings_count, 0) as ratings_count'),
+                DB::raw('COALESCE(r.ratings_avg_score, 0) as ratings_avg_score'),
+                DB::raw('CASE WHEN COALESCE(r.ratings_count,0) > 0 THEN 1 ELSE 0 END as has_ratings'),
+            ])
+            ->selectRaw(
+                '( (COALESCE(r.ratings_count,0) * COALESCE(r.ratings_avg_score,0) + ? * ?) / NULLIF(COALESCE(r.ratings_count,0) + ?, 0) ) as bayes_score',
+                [$m, $C, $m]
+            )
+            ->orderByDesc('has_ratings')
+            ->orderByDesc('bayes_score')
+            ->orderByDesc('ratings_count');
+
+        // Debug: final staff sql
+        logger()->debug('LB STAFF SQL', ['sql' => $staffQ->toSql(), 'bindings' => $staffQ->getBindings()]);
+
+        return $staffQ;
     }
-    $C = (float) ($global->avg('score') ?? 0);
-
-    // prepare safe SQL snippets for date filters (use PDO quote to avoid injection)
-    $pdo = DB::getPdo();
-    $fromSql = null;
-    $toSql   = null;
-    if (!empty($range['from'])) {
-        $fromSql = $pdo->quote($range['from']->format('Y-m-d H:i:s'));
-    }
-    if (!empty($range['to'])) {
-        $toSql = $pdo->quote($range['to']->format('Y-m-d H:i:s'));
-    }
-
-    $rangeWhere = '';
-    if ($fromSql !== null) {
-        $rangeWhere .= " AND r.staff_id = staff.id AND r.created_at >= {$fromSql}";
-    } else {
-        $rangeWhere .= " AND r.staff_id = staff.id";
-    }
-    // note: we'll reuse slightly different alias names per subquery
-
-    // correlated subqueries (embedded dates, no external bindings)
-    $countSub = 'COALESCE((select count(*) from ratings r where r.staff_id = staff.id' .
-        ($fromSql !== null ? " and r.created_at >= {$fromSql}" : '') .
-        ($toSql   !== null ? " and r.created_at <= {$toSql}"   : '') .
-        '), 0)';
-
-    $avgSub = 'COALESCE((select round(avg(r2.score), 2) from ratings r2 where r2.staff_id = staff.id' .
-        ($fromSql !== null ? " and r2.created_at >= {$fromSql}" : '') .
-        ($toSql   !== null ? " and r2.created_at <= {$toSql}"   : '') .
-        '), 0)';
-
-    // bayes expression: (n * avg + m * C) / (n + m)
-    // we inline the same correlated count and avg subqueries
-    $bayesExpr = "(
-        ( ( {$countSub} * {$avgSub} ) + ? * ? )
-        / NULLIF( ( {$countSub} + ? ), 0)
-    )";
-
-    // Build query
-    $q = Staff::query()
-        ->select('staff.*')
-        ->selectRaw("{$countSub} as ratings_count")
-        ->selectRaw("{$avgSub} as ratings_avg_score")
-        ->selectRaw($bayesExpr . " as bayes_score", [$m, $C, $m]);
-
-    // apply minVotes filter (if requested) using correlated subquery (no binding issues)
-    if ($minVotes) {
-        $minWhere = '(select count(*) from ratings rmin where rmin.staff_id = staff.id'
-            . ($fromSql !== null ? " and rmin.created_at >= {$fromSql}" : '')
-            . ($toSql   !== null ? " and rmin.created_at <= {$toSql}"   : '')
-            . ") >= {$minVotes}";
-        $q->whereRaw($minWhere);
-    }
-
-    // order: staff with ratings first, then bayes, then count
-    // we reuse the countSub expression in ORDER BY by duplicating it (cheap)
-    $hasRatingsExpr = "CASE WHEN {$countSub} > 0 THEN 1 ELSE 0 END";
-
-    return $q
-        ->orderByDesc(DB::raw($hasRatingsExpr))
-        ->orderByDesc('bayes_score')
-        ->orderByDesc('ratings_count');
-}
-
-
 
     /** Data podium top-3 (respects filter state) */
     protected function getViewData(): array
@@ -223,9 +192,7 @@ class StaffOverallLeaderboard extends Page implements HasTable
                     ->label('Score (Bayes)')
                     ->state(fn ($record) => (float) $record->bayes_score)
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true)
-                    ->formatStateUsing(fn ($s) => number_format((float)$s, 3))
-,
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('ratings_avg_score')
                     ->label('Avg (raw)')
@@ -337,13 +304,11 @@ class StaffOverallLeaderboard extends Page implements HasTable
     /**
      * Header action: open route GET PDF (use URL only)
      */
-protected function getHeaderActions(): array
-{
-    $buildQueryFromSession = function (): array {
-        $filters = session('lb_filters', []);
+    protected function getHeaderActions(): array
+    {
+        $filters = $this->getTableFilterState('table') ?? session('lb_filters') ?? [];
 
         $query = [];
-
         if (!empty($filters['date_range']['from']) || !empty($filters['date_range']['to'])) {
             if (!empty($filters['date_range']['from'])) {
                 $query['from'] = Carbon::parse($filters['date_range']['from'])->toDateString();
@@ -356,58 +321,17 @@ protected function getHeaderActions(): array
         } elseif (!empty($filters['30d'])) {
             $query['range'] = '30d';
         }
-
         if (!empty($filters['min5'])) {
             $query['min5'] = 1;
         }
 
-        return $query;
-    };
-
-    return [
-        Action::make('exportPdf')
-            ->label('Export PDF')
-            ->icon('heroicon-o-document-text')
-            ->color('secondary')
-            ->url(fn () => route('staff.leaderboard.pdf', $buildQueryFromSession()))
-            ->openUrlInNewTab(),
-    ];
-}
-
-
-    public function prepareExport(): void
-{
-    // prefer live Filament state, fallback to session snapshot
-    $filters = $this->getTableFilterState('table') ?? session('lb_filters') ?? [];
-
-    // build explicit from/to as yyyy-mm-dd strings
-    $from = $filters['date_range']['from'] ?? null;
-    $to   = $filters['date_range']['to'] ?? null;
-
-    if (! $from && ! $to) {
-        if (!empty($filters['7d'])) {
-            $from = now()->subDays(7)->startOfDay()->toDateString();
-            $to   = now()->endOfDay()->toDateString();
-        } elseif (!empty($filters['30d'])) {
-            $from = now()->subDays(30)->startOfDay()->toDateString();
-            $to   = now()->endOfDay()->toDateString();
-        }
-    } else {
-        $from = $from ? Carbon::parse($from)->toDateString() : null;
-        $to   = $to   ? Carbon::parse($to)->toDateString() : null;
+        return [
+            Action::make('exportPdf')
+                ->label('Export PDF')
+                ->icon('heroicon-o-document-text')
+                ->color('secondary')
+                ->url(fn () => route('staff.leaderboard.pdf', $query))
+                ->openUrlInNewTab(),
+        ];
     }
-
-    $query = [];
-    if ($from) $query['from'] = $from;
-    if ($to)   $query['to']   = $to;
-    if (!empty($filters['min5'])) $query['min5'] = 1;
-
-    $url = route('staff.leaderboard.pdf', $query);
-
-    // debug log for verification
-    logger()->debug('PREPARE EXPORT', ['filters' => $filters, 'url' => $url]);
-
-    // Emit Livewire event (frontend listens and opens new tab)
-    $this->emit('openExportUrl', $url);
-}
 }

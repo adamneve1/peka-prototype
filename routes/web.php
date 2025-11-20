@@ -26,43 +26,52 @@ Route::middleware('throttle:ratings')->get('/', Peka::class)->name('peka.page');
 
 
 
-// Route untuk PDF (debug-friendly)
+// Route untuk PDF (debug-friendly) - Filament v4 friendly: closure route
 Route::get('/adminPanel/staff-overall-leaderboard/pdf', function (Request $request) {
-    // Baca query params: from=YYYY-MM-DD, to=YYYY-MM-DD, range=7d|30d, min5=1
-    $from = $request->query('from');
-    $to   = $request->query('to');
+    // Normalize input -> ALWAYS convert to Carbon|null
+    $fromInput = $request->query('from');
+    $toInput   = $request->query('to');
+    $range     = $request->query('range'); // optional '7d'|'30d'
+    $min5      = $request->boolean('min5');
 
-    $range = null;
-    if ($from || $to) {
-        $from = $from ? Carbon::parse($from)->startOfDay() : now()->subYears(10);
-        $to   = $to   ? Carbon::parse($to)->endOfDay()   : now();
-        $range = ['from' => $from, 'to' => $to];
-    } elseif ($request->query('range') === '7d') {
-        $range = ['from' => now()->subDays(7), 'to' => now()];
-    } elseif ($request->query('range') === '30d') {
-        $range = ['from' => now()->subDays(30), 'to' => now()];
+    $fromCarbon = null;
+    $toCarbon = null;
+
+    if ($fromInput || $toInput) {
+        $fromCarbon = $fromInput ? Carbon::parse($fromInput)->startOfDay() : now()->subYears(10);
+        $toCarbon   = $toInput   ? Carbon::parse($toInput)->endOfDay()   : now();
+    } elseif ($range === '7d') {
+        $fromCarbon = now()->subDays(7)->startOfDay();
+        $toCarbon   = now()->endOfDay();
+    } elseif ($range === '30d') {
+        $fromCarbon = now()->subDays(30)->startOfDay();
+        $toCarbon   = now()->endOfDay();
     }
 
-    $minVotes = $request->boolean('min5') ? 5 : null;
+    $rangeArr = null;
+    if ($fromCarbon || $toCarbon) {
+        $rangeArr = ['from' => $fromCarbon, 'to' => $toCarbon];
+    }
 
-    // --- build global mean C and m (sama logic di page)
+    $minVotes = $min5 ? 5 : null;
+
+    // --- build global mean C and m (same logic as page)
     $global = Rating::query();
-    if ($range) {
-        $global->whereBetween('created_at', [$range['from'], $range['to']]);
+    if ($rangeArr) {
+        $global->whereBetween('created_at', [$rangeArr['from'], $rangeArr['to']]);
     }
     $C = (float) ($global->avg('score') ?? 0);
     $m = 10;
 
-    // subquery agg
+    // subquery agg (respect range & minVotes)
     $agg = Rating::query()
         ->select('staff_id')
-        ->when($range, fn($q) => $q->whereBetween('created_at', [$range['from'], $range['to']]))
+        ->when($rangeArr, fn($q) => $q->whereBetween('created_at', [$rangeArr['from'], $rangeArr['to']]))
         ->selectRaw('COUNT(*) as ratings_count')
         ->selectRaw('ROUND(AVG(score), 2) as ratings_avg_score')
         ->groupBy('staff_id')
         ->when($minVotes, fn($q) => $q->havingRaw('COUNT(*) >= ?', [$minVotes]));
 
-    // main rows
     $rowsCollection = Staff::query()
         ->leftJoinSub($agg, 'r', 'r.staff_id', '=', 'staff.id')
         ->select('staff.*')
@@ -80,99 +89,48 @@ Route::get('/adminPanel/staff-overall-leaderboard/pdf', function (Request $reque
         ->orderByDesc('ratings_count')
         ->get(['id','name','photo_path','ratings_avg_score','ratings_count','bayes_score']);
 
-    // Map rows -> normal array + ensure photo is data-uri or absolute url
-    ini_set('memory_limit','512M');
-    set_time_limit(120);
-    Pdf::setOptions(['isRemoteEnabled' => true, 'isHtml5ParserEnabled' => true]);
-
+    // Map rows -> plain array for blade
     $rows = $rowsCollection->map(function ($s) {
-        $photoPath = $s->photo_path;
-        $photo = null;
-
-        if ($photoPath) {
-            // data URI passthrough
-            if (Str::startsWith($photoPath, 'data:')) {
-                $photo = $photoPath;
-            }
-            // absolute HTTP(S): try to fetch and convert to base64 (safer)
-            elseif (Str::startsWith($photoPath, 'http://') || Str::startsWith($photoPath, 'https://')) {
-                $contents = @file_get_contents($photoPath);
-                if ($contents !== false) {
-                    $mime = finfo_buffer(finfo_open(FILEINFO_MIME_TYPE), $contents) ?: 'image/png';
-                    $photo = 'data:' . $mime . ';base64,' . base64_encode($contents);
-                } else {
-                    // fallback to absolute URL (dompdf may still load if remote enabled)
-                    $photo = $photoPath;
-                }
-            } else {
-                // try storage/public path
-                $candidate = null;
-                if (Str::startsWith($photoPath, 'storage/') || Str::startsWith($photoPath, 'public/')) {
-                    $candidate = public_path($photoPath);
-                }
-                if (!$candidate && Storage::disk('public')->exists($photoPath)) {
-                    $candidate = Storage::disk('public')->path($photoPath);
-                }
-                if (!$candidate && file_exists(public_path($photoPath))) {
-                    $candidate = public_path($photoPath);
-                }
-                if (!$candidate && file_exists(base_path($photoPath))) {
-                    $candidate = base_path($photoPath);
-                }
-
-                if ($candidate && is_readable($candidate)) {
-                    $contents = @file_get_contents($candidate);
-                    if ($contents !== false) {
-                        $mime = mime_content_type($candidate) ?: 'image/png';
-                        $photo = 'data:' . $mime . ';base64,' . base64_encode($contents);
-                    }
-                } else {
-                    // last resort: absolute URL via url()
-                    $photoUrl = url($photoPath);
-                    $contents = @file_get_contents($photoUrl);
-                    if ($contents !== false) {
-                        $mime = finfo_buffer(finfo_open(FILEINFO_MIME_TYPE), $contents) ?: 'image/png';
-                        $photo = 'data:' . $mime . ';base64,' . base64_encode($contents);
-                    } else {
-                        $photo = $photoUrl; // allow dompdf remote if enabled
-                    }
-                }
-            }
-        }
-
+        // keep it light: do NOT do heavy file_get_contents here
         return [
             'id'    => $s->id,
             'name'  => $s->name,
-            'photo' => $photo,
+            'photo' => $s->photo_url, // just a URL, don't convert here
             'avg'   => (float) ($s->ratings_avg_score ?? 0),
             'cnt'   => (int) ($s->ratings_count ?? 0),
             'bayes' => (float) ($s->bayes_score ?? 0),
         ];
     })->values()->toArray();
 
-    // podium top 3
     $podium = array_slice($rows, 0, 3);
 
-    // prepare filters array for view (so compact('filters') won't fail)
+    // Ensure filters array exists for the view
     $filters = [
-        'from' => $from ? $from->toDateString() : null,
-        'to'   => $to ? $to->toDateString() : null,
-        'range'=> $request->query('range'),
+        'from' => $fromCarbon ? $fromCarbon->toDateString() : null,
+        'to'   => $toCarbon ? $toCarbon->toDateString() : null,
+        'range'=> $range,
         'min5' => (bool) $minVotes,
     ];
 
-    // --- DEBUG MODE: render HTML so you can inspect <img src="...">
-    // change to PDF streaming once verified
+    // Debug HTML view (inspect before generating PDF)
     if ($request->query('debug') === 'html') {
         return view('filament.pages.staff-overall-leaderboard-pdf', compact('podium','rows','filters'));
     }
 
-    // --- PRODUCTION: render PDF
+    // Generate PDF (inline)
+    ini_set('memory_limit','512M');
+    set_time_limit(120);
+    Pdf::setOptions(['isRemoteEnabled' => true, 'isHtml5ParserEnabled' => true]);
+
     $pdf = Pdf::loadView('filament.pages.staff-overall-leaderboard-pdf', compact('podium','rows','filters'));
     $pdf->setPaper('a4', 'portrait');
 
-    return response($pdf->stream('staff-leaderboard.pdf'), 200)
-        ->header('Content-Type', 'application/pdf');
-
+    return response($pdf->output(), 200)
+        ->header('Content-Type', 'application/pdf')
+        ->header('Content-Disposition', 'inline; filename="staff-leaderboard.pdf"');
 })->name('staff.leaderboard.pdf')->middleware(['auth']);
+
+
+Route::get('staff/leaderboard/pdf', [\App\Http\Controllers\StaffLeaderboardController::class, 'pdf'])
+    ->name('staff.leaderboard.pdf');
 
