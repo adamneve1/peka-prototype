@@ -7,6 +7,7 @@
     <style>
         @page { 
             margin: 2.5cm; 
+            margin-bottom: 3cm; /* Tambah margin bawah supaya footer tidak menabrak isi */
             size: A4;
         }
         
@@ -88,6 +89,19 @@
             font-weight: bold;
             text-decoration: underline;
         }
+
+        /* FOOTER GENERATED */
+        .generated {
+            position: fixed;
+            bottom: -1.5cm; /* Geser ke area margin bawah */
+            left: 0;
+            right: 0;
+            font-size: 9pt;
+            font-style: italic;
+            border-top: 1px solid #000;
+            padding-top: 5px;
+            color: #444;
+        }
     </style>
 </head>
 
@@ -137,11 +151,6 @@
             <td>:</td>
             <td>{{ number_format($totalVotes, 0, ',', '.') }} Suara</td>
         </tr>
-        <tr>
-            <td>Tanggal Cetak</td>
-            <td>:</td>
-            <td>{{ $formatDateIndo(now()) }}</td>
-        </tr>
     </table>
 
     <table class="table-data">
@@ -168,22 +177,16 @@
                         @endif
                     </td>
                     <td class="text-center">
-                        {{-- LOGIKA STATUS NILAI --}}
                         @if($r['cnt'] == 0)
-                            {{-- KASUS 0 SUARA --}}
                             <span style="font-style: italic; font-size: 10pt;">Belum Dinilai</span>
-                        
                         @elseif($r['cnt'] < 5)
-                            {{-- KASUS KURANG DARI 5 SUARA --}}
                             <div class="text-bold">
                                 {{ number_format($r['bayes'], 2, ',', '.') }} <span style="font-weight:normal; font-size:10pt;">/ 5</span>
                             </div>
                             <div style="font-style: italic; font-size: 9pt; margin-top: 2px;">
                                 (*Kurang Data)
                             </div>
-                        
                         @else
-                            {{-- KASUS NORMAL (>= 5) --}}
                             <span class="text-bold">
                                 {{ number_format($r['bayes'], 2, ',', '.') }}
                             </span>
@@ -201,14 +204,10 @@
         </tbody>
     </table>
 
-    <div class="signature-section">
-        <div class="signature-box">
-            <div>Batam, {{ $formatDateIndo(now()) }}</div>
-            <div style="margin-bottom: 5px;">Kepala Unit / Atasan Langsung,</div>
-            
-            <div class="signature-name">NAMA PEJABAT</div>
-            <div>NIP. 19800101 200012 1 001</div>
-        </div>
+
+
+    <div class="generated">
+        Dokumen dihasilkan otomatis — {{ \Carbon\Carbon::now()->format('d/m/Y H:i:s') }}
     </div>
 
 </body>
