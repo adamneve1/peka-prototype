@@ -198,23 +198,64 @@ protected function resolveRangeFromFilters(?array $filters): ?array
                     ->badge()
                     ->sortable(),
             ])
+->filters([
+    // quick toggles — null-safe
+    TableFilter::make('7d')
+        ->label('7 hari')
+        ->query(function ($query) {
+            if (! $query) return $query;
+            return $query->where('created_at', '>=', now()->subDays(7));
+        }),
 
-            // Filter: quick toggles + date range picker + min5
-            ->filters([
-                TableFilter::make('7d')->label('7 hari'),
-                TableFilter::make('30d')->label('30 hari'),
-                TableFilter::make('min5')->label('Min 5 votes'),
+    TableFilter::make('30d')
+        ->label('30 hari')
+        ->query(function ($query) {
+            if (! $query) return $query;
+            return $query->where('created_at', '>=', now()->subDays(30));
+        }),
 
-                TableFilter::make('date_range')
-                    ->form([
-                        DatePicker::make('from')->label('From'),
-                        DatePicker::make('to')->label('To'),
-                    ])
-                    ->label('Date range'),
-            ])
+    // Min 5 votes — robust via whereExists (works regardless join/subquery)
+    TableFilter::make('min5')
+        ->label('Min 5 votes')
+        ->query(function ($query) {
+            if (! $query) return $query;
+            return $query->whereExists(function ($sub) {
+                $sub->select(DB::raw(1))
+                    ->from('ratings')
+                    ->whereColumn('ratings.staff_id', 'staff.id')
+                    ->groupBy('ratings.staff_id')
+                    ->havingRaw('COUNT(*) >= 5');
+            });
+        }),
 
-            ->paginationPageOptions([15, 30, 50])
-            ->defaultPaginationPageOption(15);
+    // date range -> form with query (robust & null-safe)
+    TableFilter::make('date_range')
+        ->label('Rentang Tanggal')
+        ->form([
+            DatePicker::make('from')->label('From'),
+            DatePicker::make('to')->label('To'),
+        ])
+        ->indicateUsing(function (array $data): array {
+            $indicators = [];
+            if (!empty($data['from'])) {
+                $indicators[] = 'Dari: ' . Carbon::parse($data['from'])->format('d M Y');
+            }
+            if (!empty($data['to'])) {
+                $indicators[] = 'Sampai: ' . Carbon::parse($data['to'])->format('d M Y');
+            }
+            return $indicators;
+        })
+        ->query(function ($query, array $data) {
+            if (! $query) return $query;
+            return $query
+                ->when($data['from'] ?? null, fn ($q, $date) => $q->whereDate('created_at', '>=', $date))
+                ->when($data['to'] ?? null,   fn ($q, $date) => $q->whereDate('created_at', '<=', $date));
+        }),
+])
+->filtersFormColumns(3)
+->persistFiltersInSession()
+
+;
     }
 
     /**

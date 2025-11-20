@@ -9,7 +9,13 @@
         .filters { font-size: 11px; color: #555; margin-bottom: 8px; }
         .podium { display:flex; gap:12px; margin-bottom: 16px; }
         .card { border:1px solid #ddd; padding:8px; border-radius:6px; flex:1; text-align:center; }
-        .photo { width:80px; height:80px; object-fit:cover; border-radius:50%; margin-bottom:8px; }
+  .photo { 
+    width:80px; 
+    height:80px; 
+    object-fit:cover; 
+    border-radius:50%;
+}
+
         table { width:100%; border-collapse: collapse; margin-top:8px; }
         th, td { border:1px solid #eee; padding:6px; text-align:left; font-size:11px; }
         th { background:#f7f7f7; }
@@ -31,7 +37,20 @@
         @foreach($podium as $p)
             <div class="card">
                 @if($p['photo'])
-                    <img class="photo" src="{{ $p['photo'] }}" alt="photo">
+                  <div style="
+    width:80px;
+    height:80px;
+    border-radius:50%;
+    overflow:hidden;
+    margin:0 auto 8px;
+">
+    <img src="{{ $p['photo'] }}" alt="photo" style="
+        width:100%;
+        height:auto;
+        display:block;
+    ">
+</div>
+
                 @else
                     <div style="width:80px;height:80px;border-radius:50%;background:#ddd;display:inline-block;margin-bottom:8px;"></div>
                 @endif
