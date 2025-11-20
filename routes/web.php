@@ -125,9 +125,21 @@ Route::get('/adminPanel/staff-overall-leaderboard/pdf', function (Request $reque
     $pdf = Pdf::loadView('filament.pages.staff-overall-leaderboard-pdf', compact('podium','rows','filters'));
     $pdf->setPaper('a4', 'portrait');
 
-    return response($pdf->output(), 200)
-        ->header('Content-Type', 'application/pdf')
-        ->header('Content-Disposition', 'inline; filename="staff-leaderboard.pdf"');
+// contoh: dari query filter
+$from = $request->query('from');
+$to   = $request->query('to');
+
+if ($from && $to) {
+    $filename = "Laporan-Kinerja-{$from}-sd-{$to}.pdf";
+} else {
+    $filename = "Laporan-Kinerja-".now()->format('Ymd-His').".pdf";
+}
+
+return response($pdf->output(), 200)
+    ->header('Content-Type', 'application/pdf')
+    ->header('Content-Disposition', 'inline; filename="'.$filename.'"');
+
+
 })->name('staff.leaderboard.pdf')->middleware(['auth']);
 
 
