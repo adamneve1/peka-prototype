@@ -7,14 +7,14 @@
     <style>
         @page { 
             margin: 2.5cm; 
-            margin-bottom: 3cm; /* Tambah margin bawah supaya footer tidak menabrak isi */
+            margin-bottom: 3cm; /* Ruang untuk footer */
             size: A4;
         }
         
         body {
             font-family: "Times New Roman", Times, serif;
             font-size: 12pt;
-            line-height: 1.5;
+            line-height: 1.4;
             color: #000;
         }
 
@@ -54,7 +54,7 @@
         
         .table-data th, .table-data td {
             border: 1px solid #000;
-            padding: 8px;
+            padding: 6px 8px; /* Padding agak dirapatkan biar muat banyak */
             vertical-align: middle;
         }
 
@@ -63,6 +63,7 @@
             text-align: center;
             background-color: #fff; 
             font-size: 11pt;
+            text-transform: uppercase;
         }
 
         .table-data td {
@@ -71,13 +72,13 @@
 
         /* UTILS */
         .text-center { text-align: center; }
-        .text-right { text-align: right; }
         .text-bold { font-weight: bold; }
 
         /* TANDA TANGAN */
         .signature-section {
-            margin-top: 40px;
+            margin-top: 30px;
             width: 100%;
+            page-break-inside: avoid; /* Jangan potong tanda tangan ke halaman baru */
         }
         .signature-box {
             float: right; 
@@ -93,7 +94,7 @@
         /* FOOTER GENERATED */
         .generated {
             position: fixed;
-            bottom: -1.5cm; /* Geser ke area margin bawah */
+            bottom: -1.5cm;
             left: 0;
             right: 0;
             font-size: 9pt;
@@ -156,19 +157,36 @@
     <table class="table-data">
         <thead>
             <tr>
-                <th width="5%">No</th>
+                <th width="8%">Ranking</th>
                 <th>Nama Pegawai</th>
-                <th width="20%">Jumlah Penilaian</th>
-                <th width="20%">Rata-Rata</th>
-                <th width="20%">Skor Pelayanan<br>(Maks 5,00)</th>
+                <th width="18%">Jumlah<br>Suara</th>
+                <th width="18%">Rata-Rata<br>(Murni)</th>
+                <th width="22%">Skor Pelayanan<br>(Ranking)</th>
             </tr>
         </thead>
         <tbody>
+            {{-- Inisialisasi Nomor Urut Manual --}}
+            @php $nomorUrut = 1; @endphp
+
             @forelse($rows as $r)
                 <tr>
-                    <td class="text-center">{{ $loop->iteration }}</td>
+                    {{-- KOLOM 1: RANKING --}}
+                    <td class="text-center">
+                        @if($r['cnt'] >= 5)
+                            {{-- Hanya beri nomor jika suara >= 5 --}}
+                            {{ $nomorUrut++ }}
+                        @else
+                            -
+                        @endif
+                    </td>
+
+                    {{-- KOLOM 2: NAMA --}}
                     <td>{{ $r['name'] ?? '-' }}</td>
+
+                    {{-- KOLOM 3: JUMLAH SUARA --}}
                     <td class="text-center">{{ $r['cnt'] }}</td>
+
+                    {{-- KOLOM 4: RATA-RATA MURNI --}}
                     <td class="text-center">
                         @if($r['cnt'] == 0)
                             -
@@ -176,18 +194,25 @@
                             {{ number_format($r['avg'], 2, ',', '.') }}
                         @endif
                     </td>
+
+                    {{-- KOLOM 5: SKOR PELAYANAN (BAYES) --}}
                     <td class="text-center">
                         @if($r['cnt'] == 0)
-                            <span style="font-style: italic; font-size: 10pt;">Belum Dinilai</span>
+                            {{-- KASUS 0 SUARA --}}
+                            <span style="font-style: italic; font-size: 10pt; color: #666;">Belum Dinilai</span>
+                        
                         @elseif($r['cnt'] < 5)
-                            <div class="text-bold">
-                                {{ number_format($r['bayes'], 2, ',', '.') }} <span style="font-weight:normal; font-size:10pt;">/ 5</span>
+                            {{-- KASUS 1-4 SUARA (BELUM VALID) --}}
+                            <div class="text-bold" style="color: #444;">
+                                {{ number_format($r['bayes'], 2, ',', '.') }}
                             </div>
-                            <div style="font-style: italic; font-size: 9pt; margin-top: 2px;">
+                            <div style="font-style: italic; font-size: 8pt; margin-top: 2px;">
                                 (*Kurang Data)
                             </div>
+                        
                         @else
-                            <span class="text-bold">
+                            {{-- KASUS VALID (>= 5 SUARA) --}}
+                            <span class="text-bold" style="font-size: 12pt;">
                                 {{ number_format($r['bayes'], 2, ',', '.') }}
                             </span>
                             <span style="font-weight: normal; font-size: 10pt;"> / 5</span>
@@ -205,9 +230,9 @@
     </table>
 
 
-
+    {{-- Footer Otomatis --}}
     <div class="generated">
-        Dokumen dihasilkan otomatis — {{ \Carbon\Carbon::now()->format('d/m/Y H:i:s') }}
+        Dokumen dihasilkan otomatis oleh Sistem PEKA — {{ \Carbon\Carbon::now()->format('d/m/Y H:i:s') }} WIB
     </div>
 
 </body>
