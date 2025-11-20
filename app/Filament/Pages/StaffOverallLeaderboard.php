@@ -10,6 +10,10 @@ use Filament\Tables\Table;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Illuminate\Support\Facades\DB;
+use Filament\Actions\Action;
+use Filament\Forms\Components\DatePicker;
+use Filament\Tables\Filters\Filter as TableFilter;
+use Illuminate\Support\Carbon;
 
 class StaffOverallLeaderboard extends Page implements HasTable
 {
@@ -17,9 +21,10 @@ class StaffOverallLeaderboard extends Page implements HasTable
 
     protected ?string $heading = 'Staff Leaderboard (Overall)';
 
-    public static function getNavigationIcon(): string { return 'heroicon-o-trophy'; }
-    public static function getNavigationGroup(): ?string { return 'Monitoring'; }
-    public static function getNavigationLabel(): string { return 'Leaderboard Staff'; }
+  public static function getNavigationIcon(): string { return 'heroicon-o-trophy'; }
+public static function getNavigationGroup(): ?string { return 'Monitoring'; } // fine if parent allows null
+public static function getNavigationLabel(): string { return 'Leaderboard Staff'; }
+
 
     public function getView(): string
     {
@@ -28,7 +33,7 @@ class StaffOverallLeaderboard extends Page implements HasTable
 
     /**
      * Bangun query Bayesian dengan opsi:
-     * - $range: ['from' => Carbon, 'to' => Carbon] untuk 7d/30d
+     * - $range: ['from' => Carbon, 'to' => Carbon] untuk custom range / 7d / 30d
      * - $minVotes: integer minimal vote (contoh 5 kalau filter aktif)
      */
     protected function bayesianStaffQuery(?array $range = null, ?int $minVotes = null, int $m = 10)
@@ -56,36 +61,28 @@ class StaffOverallLeaderboard extends Page implements HasTable
         // Mulai dari Eloquent builder
         return Staff::query()
             ->leftJoinSub($agg, 'r', 'r.staff_id', '=', 'staff.id')
-->select('staff.*')
-->addSelect([
-    DB::raw('COALESCE(r.ratings_count, 0) as ratings_count'),
-    DB::raw('COALESCE(r.ratings_avg_score, 0) as ratings_avg_score'),
-    DB::raw('CASE WHEN COALESCE(r.ratings_count,0) > 0 THEN 1 ELSE 0 END as has_ratings'),
-])
-->selectRaw(
-    '( (COALESCE(r.ratings_count,0) * COALESCE(r.ratings_avg_score,0) + ? * ?) / NULLIF(COALESCE(r.ratings_count,0) + ?, 0) ) as bayes_score',
-    [$m, $C, $m]
-)
-// urutan: yang punya rating dulu, baru bayes_score
-->orderByDesc('has_ratings')
-->orderByDesc('bayes_score')
-->orderByDesc('ratings_count');
+            ->select('staff.*')
+            ->addSelect([
+                DB::raw('COALESCE(r.ratings_count, 0) as ratings_count'),
+                DB::raw('COALESCE(r.ratings_avg_score, 0) as ratings_avg_score'),
+                DB::raw('CASE WHEN COALESCE(r.ratings_count,0) > 0 THEN 1 ELSE 0 END as has_ratings'),
+            ])
+            ->selectRaw(
+                '( (COALESCE(r.ratings_count,0) * COALESCE(r.ratings_avg_score,0) + ? * ?) / NULLIF(COALESCE(r.ratings_count,0) + ?, 0) ) as bayes_score',
+                [$m, $C, $m]
+            )
+            // urutan: yang punya rating dulu, baru bayes_score
+            ->orderByDesc('has_ratings')
+            ->orderByDesc('bayes_score')
+            ->orderByDesc('ratings_count');
     }
 
     /** Data podium top-3 (ikut state filter) */
     protected function getViewData(): array
     {
-        // Ambil state filter biar konsisten dengan tabel
-      $filters = $this->getTableFilterState('table');
+        $filters = $this->getTableFilterState('table');
 
-
-        $range = null;
-        if (!empty($filters['7d'])) {
-            $range = ['from' => now()->subDays(7), 'to' => now()];
-        } elseif (!empty($filters['30d'])) {
-            $range = ['from' => now()->subDays(30), 'to' => now()];
-        }
-
+        $range = $this->resolveRangeFromFilters($filters);
         $minVotes = !empty($filters['min5']) ? 5 : null;
 
         $podium = $this->bayesianStaffQuery($range, $minVotes)
@@ -104,26 +101,59 @@ class StaffOverallLeaderboard extends Page implements HasTable
         return compact('podium');
     }
 
+    /**
+     * Central helper: resolve range (from/to) from filter state
+     */
+   /**
+ * Central helper: resolve range (from/to) from filter state
+ */
+protected function resolveRangeFromFilters(?array $filters): ?array
+{
+    // Normalize: jika null, jadikan array kosong
+    $filters = $filters ?? [];
+
+    // Prioritize explicit date_range filter (from/to)
+    if (!empty($filters['date_range']['from']) || !empty($filters['date_range']['to'])) {
+        $from = !empty($filters['date_range']['from'])
+            ? Carbon::parse($filters['date_range']['from'])->startOfDay()
+            : null;
+        $to = !empty($filters['date_range']['to'])
+            ? Carbon::parse($filters['date_range']['to'])->endOfDay()
+            : null;
+
+        if ($from || $to) {
+            $from ??= now()->subYears(10);
+            $to   ??= now();
+            return ['from' => $from, 'to' => $to];
+        }
+    }
+
+    // Quick toggles fallback
+    if (!empty($filters['7d'])) {
+        return ['from' => now()->subDays(7), 'to' => now()];
+    }
+
+    if (!empty($filters['30d'])) {
+        return ['from' => now()->subDays(30), 'to' => now()];
+    }
+
+    return null;
+}
+
+
     /** Tabel leaderboard detail (Filament v4) */
     public function table(Table $table): Table
     {
         return $table
             // Build query berdasar state filter setiap render
-          ->query(function () {
-    $filters = $this->getTableFilterState('table');
+            ->query(function () {
+                $filters = $this->getTableFilterState('table');
 
-    $range = null;
-    if (!empty($filters['7d'])) {
-        $range = ['from' => now()->subDays(7), 'to' => now()];
-    } elseif (!empty($filters['30d'])) {
-        $range = ['from' => now()->subDays(30), 'to' => now()];
-    }
+                $range = $this->resolveRangeFromFilters($filters);
+                $minVotes = !empty($filters['min5']) ? 5 : null;
 
-    $minVotes = !empty($filters['min5']) ? 5 : null;
-
-    return $this->bayesianStaffQuery($range, $minVotes);
-})
-
+                return $this->bayesianStaffQuery($range, $minVotes);
+            })
 
             ->columns([
                 Tables\Columns\TextColumn::make('rank')
@@ -169,14 +199,57 @@ class StaffOverallLeaderboard extends Page implements HasTable
                     ->sortable(),
             ])
 
-            // Filter di UI saja; query dibangun ulang via getTableFilterState()
+            // Filter: quick toggles + date range picker + min5
             ->filters([
-                Tables\Filters\Filter::make('7d')->label('7 hari'),
-                Tables\Filters\Filter::make('30d')->label('30 hari'),
-                Tables\Filters\Filter::make('min5')->label('Min 5 votes'),
+                TableFilter::make('7d')->label('7 hari'),
+                TableFilter::make('30d')->label('30 hari'),
+                TableFilter::make('min5')->label('Min 5 votes'),
+
+                TableFilter::make('date_range')
+                    ->form([
+                        DatePicker::make('from')->label('From'),
+                        DatePicker::make('to')->label('To'),
+                    ])
+                    ->label('Date range'),
             ])
 
-           ->paginationPageOptions([15, 30, 50])
-->defaultPaginationPageOption(15);
+            ->paginationPageOptions([15, 30, 50])
+            ->defaultPaginationPageOption(15);
+    }
+
+    /**
+     * Header action: buka route GET PDF (jangan pake Livewire action)
+     * NOTE: remove any old getActions() / exportPdf() — this is the only action.
+     */
+    protected function getHeaderActions(): array
+    {
+        $filters = $this->getTableFilterState('table');
+
+        $query = [];
+        // Prioritize explicit date_range
+        if (!empty($filters['date_range']['from']) || !empty($filters['date_range']['to'])) {
+            if (!empty($filters['date_range']['from'])) {
+                $query['from'] = Carbon::parse($filters['date_range']['from'])->toDateString();
+            }
+            if (!empty($filters['date_range']['to'])) {
+                $query['to'] = Carbon::parse($filters['date_range']['to'])->toDateString();
+            }
+        } elseif (!empty($filters['7d'])) {
+            $query['range'] = '7d';
+        } elseif (!empty($filters['30d'])) {
+            $query['range'] = '30d';
+        }
+        if (!empty($filters['min5'])) {
+            $query['min5'] = 1;
+        }
+
+        return [
+            Action::make('exportPdf')
+                ->label('Export PDF')
+                ->icon('heroicon-o-document-text')
+                ->color('secondary')
+                ->url(fn () => route('staff.leaderboard.pdf', $query))
+                ->openUrlInNewTab(),
+        ];
     }
 }
